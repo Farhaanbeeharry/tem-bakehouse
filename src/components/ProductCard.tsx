@@ -3,6 +3,8 @@ import { Cookie } from './Cookie';
 import { categories, type Product } from '../data/catalog';
 import { dietLabel, fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
+import { useImageExists } from '../lib/assets';
+import { productPhotoSrc } from './ProductVisual';
 
 export const ProductCard = ({ p }: { p: Product }) => {
   const navigate = useNavigate();
@@ -12,17 +14,23 @@ export const ProductCard = ({ p }: { p: Product }) => {
   const cat = categories.find((c) => c.id === p.cat);
   const open = () => navigate('/cookies/' + p.id);
   const needsOptions = p.flavourPick || p.custom;
+  const photo = productPhotoSrc(p.id);
+  const hasPhoto = useImageExists(photo);
 
   return (
-    <article style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <article style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
       <div
         onClick={open}
         className="card-tile"
         style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 22, background: soon ? '#EDE3D5' : '#E5DCC5', display: 'grid', placeItems: 'center', cursor: 'pointer', overflow: 'hidden' }}
       >
-        <div style={{ width: '68%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
-          <Cookie flavour={p.flavour} />
-        </div>
+        {photo && hasPhoto ? (
+          <img src={photo} alt={p.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
+        ) : (
+          <div style={{ width: '68%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
+            <Cookie flavour={p.flavour} />
+          </div>
+        )}
         {soon && (
           <div style={{ position: 'absolute', left: 14, top: 14, background: '#1E1310', color: '#F0EED9', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em', padding: '7px 10px', borderRadius: 999 }}>COMING SOON</div>
         )}
@@ -39,7 +47,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
           {fav ? '♥' : '♡'}
         </button>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '6px 12px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em', color: '#6E5C4D' }}>{cat?.short.toUpperCase()}</span>
           <button type="button" onClick={open} className="h-card" style={{ all: 'unset', cursor: 'pointer', fontWeight: 800, fontStretch: '108%', textTransform: 'uppercase', letterSpacing: '-0.025em', fontSize: 19.2, lineHeight: 1 }}>
@@ -55,7 +63,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
         <button
           type="button"
           className="btn btn-outline"
-          style={{ fontSize: 14, padding: '11px 16px', minHeight: 44 }}
+          style={{ fontSize: 14, padding: '11px 12px', minHeight: 44, whiteSpace: 'normal', marginTop: 'auto' }}
           onClick={() => {
             if (needsOptions) return open();
             addLine(p, { pack: p.packs[0].id });

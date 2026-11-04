@@ -35,7 +35,7 @@ export const SubmittedPage = () => {
   }, []);
 
   return (
-    <main style={{ position: 'relative', minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '120px var(--gutter) 80px', background: '#4A1019', color: '#F0EED9', overflow: 'hidden' }}>
+    <main data-dark="1" style={{ position: 'relative', minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '120px var(--gutter) 80px', background: '#4A1019', color: '#F0EED9', overflow: 'hidden' }}>
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {crumbs.map((c, i) => (
           <span

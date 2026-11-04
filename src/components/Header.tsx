@@ -22,10 +22,6 @@ export const Header = ({ menuOpen, onToggleMenu }: Props) => {
   const [overDark, setOverDark] = useState(pathname === '/');
 
   useEffect(() => {
-    if (pathname !== '/') {
-      setOverDark(false);
-      return;
-    }
     const check = () => {
       let dark = false;
       document.querySelectorAll('[data-dark]').forEach((el) => {
@@ -35,9 +31,11 @@ export const Header = ({ menuOpen, onToggleMenu }: Props) => {
       setOverDark(dark);
     };
     check();
+    const raf = requestAnimationFrame(check);
     window.addEventListener('scroll', check, { passive: true });
     window.addEventListener('resize', check);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener('scroll', check);
       window.removeEventListener('resize', check);
     };

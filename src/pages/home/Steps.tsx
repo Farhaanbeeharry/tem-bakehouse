@@ -36,17 +36,17 @@ export const Steps = () => {
 
   return (
     <section ref={ref} aria-label="How ordering works" style={{ position: 'relative', height: pin ? '320vh' : 'auto', background: '#E5DCC5' }}>
-      <div style={{ position: pin ? 'sticky' : 'relative', top: 0, minHeight: '100vh', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,420px),1fr))', gap: 'clamp(24px,5vw,80px)', alignItems: 'center', padding: 'clamp(80px,10vh,120px) clamp(16px,5vw,72px)' }}>
+      <div style={{ position: pin ? 'sticky' : 'relative', top: 0, minHeight: '100vh', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,420px),1fr))', gap: 'clamp(24px,5vw,80px)', alignItems: 'center', padding: pin ? '96px clamp(16px,5vw,72px) 32px' : '96px clamp(16px,5vw,72px)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="eyebrow" style={{ marginBottom: 0 }}>
             03 — How ordering works
           </div>
-          <h2 className="display" style={{ fontSize: 'clamp(36px,5vw,80px)', lineHeight: 0.88 }}>
+          <h2 className="display" style={{ fontSize: pin ? 'clamp(36px,min(5vw,8vh),80px)' : 'clamp(36px,5vw,80px)', lineHeight: 0.88 }}>
             Request first.
             <br />
             Confirmed <em style={{ color: '#711D2C' }}>together.</em>
           </h2>
-          <span ref={num} aria-hidden="true" style={{ fontWeight: 900, fontStretch: '125%', fontSize: 'clamp(120px,22vw,340px)', lineHeight: 0.78, letterSpacing: '-0.06em', color: 'transparent', WebkitTextStroke: '2px #711D2C' }}>
+          <span ref={num} aria-hidden="true" style={{ fontWeight: 900, fontStretch: '125%', fontSize: pin ? 'clamp(96px,min(22vw,26vh),340px)' : 'clamp(96px,30vw,200px)', lineHeight: 0.78, letterSpacing: '-0.06em', color: 'transparent', WebkitTextStroke: '2px #711D2C' }}>
             01
           </span>
           <p className="lede" style={{ maxWidth: '40ch' }}>

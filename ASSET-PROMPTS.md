@@ -137,6 +137,8 @@ Biscoff and Salted Caramel have no real photo yet. TEM needs to approve those im
 
 ## 3. Category cards: "Six shapes of TEM" (homepage) — 6 images
 
+> **Done.** Generated with Figma AI (gemini-3.1-flash-lite) and already in `public/assets/categories/`. They also show as the product photos for cups, cakes, sticks, shots and the mini box. Replace them with TEM's real photos any time by overwriting the files.
+
 Path: `public/assets/categories/tem_category_{id}_1200x1600.webp`. Portrait 3:4 at 1200×1600, exported as WebP quality 80. The top-left corner gets a large outlined number, so keep that area calm.
 
 ```
@@ -156,6 +158,8 @@ Path: `public/assets/categories/tem_category_{id}_1200x1600.webp`. Portrait 3:4 
 
 ## 4. Moments cards: "What's the moment?" (homepage) — 4 images
 
+> **Done.** Generated with Figma AI and already in `public/assets/moments/`.
+
 Path: `public/assets/moments/tem_moment_{id}.webp`. Portrait 4:5 at 1200×1500, WebP quality 80. The bottom-left corner gets a large burgundy letter, so keep it uncluttered.
 
 ```
@@ -172,6 +176,8 @@ Path: `public/assets/moments/tem_moment_{id}.webp`. Portrait 4:5 at 1200×1500, 
 ---
 
 ## 5. Gallery page — 12 images
+
+> Until these exist, the Gallery and the homepage Instagram strip use the category and moment photos plus hero frames as stand-ins. Each `tem_gallery_NN.webp` you upload replaces its stand-in automatically.
 
 Path: `public/assets/gallery/tem_gallery_01.webp` … `tem_gallery_12.webp`. WebP quality 80, long edge 1600 px. Use the aspect ratio listed. **Real TEM photos are better here.** Use AI only for the demo.
 
@@ -206,7 +212,7 @@ Path: `public/assets/gallery/tem_gallery_01.webp` … `tem_gallery_12.webp`. Web
 - [ ] 6 GLB models with `cookie_left` / `cookie_right` halves, in `public/models/`
 - [ ] 6 featured flavours × `_whole.png` / `_broken.png` / `_crumb.png`
 - [ ] 5 other flavours × 3 images
-- [ ] 6 category cards
-- [ ] 4 moment cards
+- [x] 6 category cards (AI-generated, replace with real photos when available)
+- [x] 4 moment cards (AI-generated)
 - [ ] 12 gallery images (real photos preferred)
 - [ ] Baker photo (real) and OG image

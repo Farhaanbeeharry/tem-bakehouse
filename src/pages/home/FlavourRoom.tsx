@@ -36,6 +36,7 @@ export const FlavourRoom = () => {
   const fp = featured[fi];
   const flavour = fp?.flavour ?? 'choco-chips';
   const mode = useStageMode(flavour);
+  const touch = useMemo(() => window.matchMedia('(hover: none)').matches, []);
   if (!fp) return null;
   const ff = flavourById[fp.flavour];
 
@@ -68,7 +69,7 @@ export const FlavourRoom = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,460px),1fr))', gap: 'clamp(24px,4vw,56px)', alignItems: 'center' }}>
-          <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 32, background: 'radial-gradient(ellipse at 50% 40%,#F2EDDC 0%,#E5DCC5 55%,#D3C4A6 100%)', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: 'max(320px, calc(100vh - 140px))', justifySelf: 'center', borderRadius: 32, background: 'radial-gradient(ellipse at 50% 40%,#F2EDDC 0%,#E5DCC5 55%,#D3C4A6 100%)', overflow: 'hidden' }}>
             <div
               aria-hidden="true"
               style={{ position: 'absolute', left: '-2%', right: '-2%', top: '6%', textAlign: 'center', fontWeight: 900, fontStretch: '125%', fontSize: 'clamp(64px,11vw,190px)', lineHeight: 0.8, letterSpacing: '-0.04em', textTransform: 'uppercase', color: 'transparent', WebkitTextStroke: '1.5px #C7B593', whiteSpace: 'nowrap', overflow: 'hidden' }}
@@ -95,7 +96,7 @@ export const FlavourRoom = () => {
             {use3d && <CookieViewer flavour={flavour} broken={broken} onBreakChange={setBroken} />}
 
             <div style={{ position: 'absolute', left: 18, top: 16, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.16em', color: '#6E5C4D', pointerEvents: 'none' }}>
-              {mode === 'photo' ? 'PHOTOGRAPHED · TAP “BREAK IT OPEN”' : mode ? 'DRAG TO TURN · DOUBLE-CLICK TO BREAK' : ''}
+              {mode === 'photo' ? 'TAP “BREAK IT OPEN”' : mode ? (touch ? 'DRAG TO TURN · TAP “BREAK IT OPEN”' : 'DRAG TO TURN · DOUBLE-CLICK TO BREAK') : ''}
             </div>
             <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <button type="button" className="btn btn-dark" style={{ padding: '13px 20px' }} onClick={() => setBroken((b) => !b)}>

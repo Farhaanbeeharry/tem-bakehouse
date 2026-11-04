@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { categories, type Diet, type Product } from '../data/catalog';
-import { Cookie } from '../components/Cookie';
+import { ProductVisual } from '../components/ProductVisual';
 
 type Props = {
   product: Product | null;
@@ -96,7 +96,7 @@ export const ProductEditPanel = ({ product: p, onSavePrice, onClose }: Props) =>
       <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8 }}>
         {p ? (
           <div className="adm-hatch" style={{ aspectRatio: '1 / 1', padding: 14 }}>
-            <Cookie flavour={p.flavour} flat />
+            <ProductVisual pid={p.id} flavour={p.flavour} flat />
           </div>
         ) : (
           <div className="adm-hatch" style={{ aspectRatio: '1 / 1' }}>

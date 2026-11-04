@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { categories, products } from '../data/catalog';
 import { setStore, useStore, type ProductState } from '../lib/store';
 import { fmt } from '../lib/format';
-import { Cookie } from '../components/Cookie';
+import { ProductVisual } from '../components/ProductVisual';
 import { ProductEditPanel } from './ProductEditPanel';
 
 const dietShort = (d: string) => (d === 'both' ? 'Regular + GF' : d === 'gf' ? 'GF only' : 'Regular');
@@ -85,7 +85,7 @@ export const ProductsView = () => {
                 <td style={{ padding: '10px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ width: 32, height: 32, flex: '0 0 auto' }}>
-                      <Cookie flavour={p.flavour} flat />
+                      <ProductVisual pid={p.id} flavour={p.flavour} flat />
                     </span>
                     <strong>{p.name}</strong>
                   </div>

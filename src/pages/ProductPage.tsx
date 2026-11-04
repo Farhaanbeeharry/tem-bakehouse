@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Cookie } from '../components/Cookie';
 import { ProductCard } from '../components/ProductCard';
+import { productPhotoSrc } from '../components/ProductVisual';
 import { categories, flavourById, flavours } from '../data/catalog';
 import { asset, useImageExists } from '../lib/assets';
 import { fmt } from '../lib/format';
@@ -9,28 +10,19 @@ import { useShop } from '../lib/shop';
 import { useProducts } from '../lib/store';
 import { NotFoundPage } from './NotFoundPage';
 
-type View = 'whole' | 'broken' | 'crumb';
+type View = 'shape' | 'whole' | 'broken' | 'crumb';
 
-const Thumb = ({ src, label, on, onPick }: { src: string; label: string; on: boolean; onPick: () => void }) => {
-  const ok = useImageExists(src);
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      disabled={!ok}
-      aria-label={`Show ${label}`}
-      aria-pressed={on}
-      className={ok ? undefined : 'striped'}
-      style={{ aspectRatio: '4 / 5', borderRadius: 16, border: `1.5px solid ${on ? '#711D2C' : 'transparent'}`, background: ok ? '#E5DCC5' : undefined, display: 'grid', placeItems: 'center', padding: 6, cursor: ok ? 'pointer' : 'default', overflow: 'hidden' }}
-    >
-      {ok ? (
-        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      ) : (
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#6E5C4D', textAlign: 'center' }}>detail · {label}</span>
-      )}
-    </button>
-  );
-};
+const Thumb = ({ label, on, onPick, children }: { label: string; on: boolean; onPick: () => void; children: ReactNode }) => (
+  <button
+    type="button"
+    onClick={onPick}
+    aria-label={`Show ${label}`}
+    aria-pressed={on}
+    style={{ position: 'relative', aspectRatio: '4 / 5', borderRadius: 16, border: `1.5px solid ${on ? '#711D2C' : 'transparent'}`, background: '#E5DCC5', display: 'grid', placeItems: 'center', padding: 0, cursor: 'pointer', overflow: 'hidden' }}
+  >
+    {children}
+  </button>
+);
 
 export const ProductPage = () => {
   const { id } = useParams();
@@ -46,15 +38,21 @@ const ProductDetail = ({ id }: { id: string }) => {
   const { addLine, setDrawerOpen, favs, toggleFav } = useShop();
   const p = P.find((x) => x.id === id)!;
   const [pd, setPd] = useState({ pack: p.packs[0].id, qty: 1, diet: (p.diet === 'gf' ? 'gf' : 'regular') as 'regular' | 'gf', flavour: p.flavour, occasion: '', message: '', instructions: '' });
-  const [view, setView] = useState<View>('whole');
+  const [picked, setView] = useState<View | null>(null);
   const f = flavourById[pd.flavour];
+  const shapeSrc = productPhotoSrc(p.id);
+  const shapeOk = useImageExists(shapeSrc);
+  const wholeOk = useImageExists(asset.productWhole(f.id));
+  const brokenOk = useImageExists(asset.productBroken(f.id));
+  const crumbOk = useImageExists(asset.productCrumb(f.id));
+  const views: View[] = [...(shapeSrc && shapeOk ? (['shape'] as const) : []), 'whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
+  const view: View = picked && views.includes(picked) ? picked : views[0];
   const soon = p.status !== 'available';
   const fav = favs.includes(p.id);
   const pk = p.packs.find((k) => k.id === pd.pack) ?? p.packs[0];
   const cat = categories.find((c) => c.id === p.cat)!;
   const recs = P.filter((x) => x.id !== p.id && x.status === 'available' && (x.cat !== p.cat || x.featured)).slice(0, 4);
   const set = (o: Partial<typeof pd>) => setPd((x) => ({ ...x, ...o }));
-  const mainSrc = view === 'broken' ? asset.productBroken(f.id) : asset.productCrumb(f.id);
 
   const add = () => {
     if (soon) return;
@@ -81,22 +79,34 @@ const ProductDetail = ({ id }: { id: string }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 'clamp(28px,5vw,80px)', alignItems: 'start' }}>
         <div style={{ position: 'sticky', top: 90, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 28, background: '#E5DCC5', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
-            {view === 'whole' ? (
+            {view === 'whole' && (
               <div key={f.id} style={{ width: '74%', transform: `rotate(${flavours.indexOf(f) * 40}deg)`, transition: 'transform 1s var(--ease)', animation: 'temFade .5s ease both' }}>
                 <Cookie flavour={f.id} />
               </div>
-            ) : (
-              <img src={mainSrc} alt={`${f.name} ${view}`} style={{ width: view === 'crumb' ? '100%' : '88%', height: view === 'crumb' ? '100%' : '88%', objectFit: view === 'crumb' ? 'cover' : 'contain', animation: 'temFade .5s ease both' }} />
             )}
-            {soon && (
+            {view === 'shape' && shapeSrc && <img key="shape" src={shapeSrc} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
+            {view === 'broken' && <img key="broken" src={asset.productBroken(f.id)} alt={`${f.name} broken in half`} style={{ width: '88%', height: '88%', objectFit: 'contain', animation: 'temFade .5s ease both' }} />}
+            {view === 'crumb' && <img key="crumb" src={asset.productCrumb(f.id)} alt={`Inside a ${f.name} cookie`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
+            {soon && !wholeOk && (
               <div style={{ position: 'absolute', left: 18, bottom: 16, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6E5C4D' }}>PROVISIONAL VISUAL · awaiting product photo</div>
             )}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-            <Thumb src={asset.productWhole(f.id)} label="whole" on={view === 'whole'} onPick={() => setView('whole')} />
-            <Thumb src={asset.productBroken(f.id)} label="break" on={view === 'broken'} onPick={() => setView('broken')} />
-            <Thumb src={asset.productCrumb(f.id)} label="inside" on={view === 'crumb'} onPick={() => setView('crumb')} />
-          </div>
+          {views.length > 1 && (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(3, views.length)},1fr)`, gap: 12 }}>
+              {views.map((v) => (
+                <Thumb key={v} label={v === 'shape' ? p.name : v === 'whole' ? `${f.name} cookie` : v === 'broken' ? 'the break' : 'the inside'} on={view === v} onPick={() => setView(v)}>
+                  {v === 'shape' && shapeSrc && <img src={shapeSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  {v === 'whole' && (
+                    <div style={{ width: '78%' }}>
+                      <Cookie flavour={f.id} flat />
+                    </div>
+                  )}
+                  {v === 'broken' && <img src={asset.productBroken(f.id)} alt="" style={{ width: '92%', height: '92%', objectFit: 'contain' }} />}
+                  {v === 'crumb' && <img src={asset.productCrumb(f.id)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </Thumb>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
@@ -248,7 +258,7 @@ const ProductDetail = ({ id }: { id: string }) => {
         <h2 className="h-card" style={{ fontSize: 28.2, marginBottom: 24 }}>
           Goes well with
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,220px),1fr))', gap: 20 }}>
+        <div className="product-grid">
           {recs.map((x) => (
             <ProductCard key={x.id} p={x} />
           ))}

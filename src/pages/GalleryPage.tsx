@@ -1,39 +1,48 @@
 import { useEffect, useState } from 'react';
-import { ImageSlot } from '../components/ImageSlot';
-import { Cookie } from '../components/Cookie';
 import { asset, useImageExists } from '../lib/assets';
 import { instagramUrl } from '../data/site';
 import { useIsMobile } from '../lib/shop';
 
+// Each slot shows tem_gallery_NN.webp once TEM's real photo is uploaded; until then, the stand-in listed here.
 const ITEMS = [
-  ['Choco Chips, stacked', '3/4', 'choco-chips'],
-  ['Morning bake', '1/1', 'plain'],
-  ['Cookie cake, personalised', '4/5', 'red-velvet'],
-  ['Red Velvet', '3/4', 'red-velvet'],
-  ['Boxes ready', '1/1', 'bueno'],
-  ['Pistachio close-up', '4/3', 'pistachio'],
-  ['Behind the counter', '3/4', 'double-choco'],
-  ['Mini cookies', '1/1', 'pinky'],
-  ['Cookie shots', '4/5', 'ferrero'],
-  ['Packing', '1/1', 'nutty-crunch'],
-  ['Ferrero', '3/4', 'ferrero'],
-  ['A celebration', '4/3', 'choco-chips'],
+  ['Choco Chips, stacked', '3/4', asset.category('round')],
+  ['Morning bake', '1/1', asset.heroFrame('desktop', 1)],
+  ['Cookie cake, personalised', '4/5', asset.category('cakes')],
+  ['Birthdays', '4/5', asset.moment('birthday')],
+  ['Boxes ready', '1/1', asset.moment('gift')],
+  ['The break', '4/3', asset.heroFrame('desktop', 96)],
+  ['Mini cookies', '3/4', asset.category('mini')],
+  ['Cookie shots', '4/5', asset.category('shots')],
+  ['Around the table', '4/5', asset.moment('gathering')],
+  ['Cookie cups', '3/4', asset.category('cups')],
+  ['Dip and share', '3/4', asset.category('sticks')],
+  ['Just because', '4/5', asset.moment('treat')],
 ] as const;
 
+const useGallerySrc = (i: number) => {
+  const own = asset.gallery(i + 1);
+  const ok = useImageExists(own);
+  return ok ? own : ITEMS[i][2];
+};
+
 const LightboxImage = ({ i }: { i: number }) => {
-  const src = asset.gallery(i + 1);
-  const ok = useImageExists(src);
-  const [cap, ratio, flavour] = ITEMS[i];
+  const src = useGallerySrc(i);
+  const [cap, ratio] = ITEMS[i];
   return (
-    <div onClick={(e) => e.stopPropagation()} className={ok ? undefined : 'striped-dark'} style={{ width: 'min(900px,100%)', aspectRatio: ratio, maxHeight: '80vh', borderRadius: 18, display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
-      {ok ? (
-        <img src={src} alt={cap} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      ) : (
-        <div style={{ width: '40%' }}>
-          <Cookie flavour={flavour} />
-        </div>
-      )}
+    <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(900px,100%)', aspectRatio: ratio, maxHeight: '80vh', borderRadius: 18, display: 'grid', placeItems: 'center', overflow: 'hidden', background: '#3B2519' }}>
+      <img src={src} alt={cap} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
+  );
+};
+
+const Tile = ({ i, onOpen }: { i: number; onOpen: () => void }) => {
+  const src = useGallerySrc(i);
+  const [cap, ratio] = ITEMS[i];
+  return (
+    <button type="button" onClick={onOpen} aria-label={`Open ${cap}`} className="card-tile" style={{ all: 'unset', cursor: 'zoom-in', display: 'block', width: '100%', marginBottom: 14, breakInside: 'avoid', position: 'relative', borderRadius: 18, overflow: 'hidden', aspectRatio: ratio, background: '#3B2519' }}>
+      <img src={src} alt={cap} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <span style={{ position: 'absolute', left: 12, bottom: 12, padding: '6px 10px', borderRadius: 999, background: 'rgba(251,248,242,0.9)', fontSize: 12, fontWeight: 600, color: '#1E1310' }}>{cap}</span>
+    </button>
   );
 };
 
@@ -62,22 +71,8 @@ export const GalleryPage = () => {
         </a>
       </div>
       <div style={{ columns: mobile ? 2 : 4, columnGap: 14 }}>
-        {ITEMS.map(([cap, ratio, flavour], i) => (
-          <button key={cap} type="button" onClick={() => setLb(i)} aria-label={`Open ${cap}`} style={{ all: 'unset', cursor: 'zoom-in', display: 'block', width: '100%', marginBottom: 14, breakInside: 'avoid', position: 'relative' }}>
-            <ImageSlot
-              src={asset.gallery(i + 1)}
-              alt={cap}
-              ratio={ratio}
-              radius={18}
-              fallback={
-                <div style={{ width: '50%', transform: `rotate(${i * 31}deg)` }}>
-                  <Cookie flavour={flavour} />
-                </div>
-              }
-            >
-              <span style={{ position: 'absolute', left: 12, top: 12, padding: '6px 10px', borderRadius: 999, background: 'rgba(251,248,242,0.9)', fontSize: 12, fontWeight: 600, color: '#1E1310' }}>{cap}</span>
-            </ImageSlot>
-          </button>
+        {ITEMS.map(([cap], i) => (
+          <Tile key={cap} i={i} onOpen={() => setLb(i)} />
         ))}
       </div>
 

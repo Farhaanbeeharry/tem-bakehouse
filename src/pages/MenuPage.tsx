@@ -86,7 +86,7 @@ export const MenuPage = () => {
       <p style={{ margin: '18px 0 22px', fontSize: 13, color: '#6E5C4D' }}>
         {list.length} {list.length === 1 ? 'item' : 'items'}
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,260px),1fr))', gap: 'clamp(14px,2vw,28px)' }}>
+      <div className="product-grid">
         {list.map((p) => (
           <ProductCard key={p.id} p={p} />
         ))}

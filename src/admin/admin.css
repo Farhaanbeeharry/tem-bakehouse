@@ -527,6 +527,7 @@ textarea.adm-input {
 
 /* ---------- tables ---------- */
 .adm-table-wrap {
+  position: relative;
   overflow-x: auto;
   border-radius: 14px;
   border: 1px solid var(--a-line);

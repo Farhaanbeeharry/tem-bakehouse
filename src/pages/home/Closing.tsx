@@ -78,9 +78,39 @@ export const Moments = () => {
 };
 
 const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
-  { par: 0.12, mt: '0', tiles: [['3/4', asset.heroFrame('mobile', 1), 'Macro of a TEM Choco Chips cookie'], ['1/1', asset.heroFrame('desktop', 1), 'Chocolate chips close-up'], ['3/4', asset.heroFrame('mobile', 110), 'Crumbs in slow motion']] },
-  { par: -0.1, mt: '-30%', tiles: [['4/5', asset.heroFrame('mobile', 50), 'Whole Choco Chips cookie'], ['3/4', asset.heroFrame('mobile', 95), 'Cookie halves with melted chocolate'], ['1/1', asset.heroFrame('desktop', 140), 'Crumbs and chocolate in the air'], ['4/5', asset.heroFrame('mobile', 1), 'Chocolate chip detail']] },
-  { par: 0.18, mt: '-12%', tiles: [['1/1', asset.heroFrame('desktop', 96), 'Cookie breaking apart'], ['3/4', asset.heroFrame('mobile', 20), 'Golden cookie surface'], ['4/5', asset.heroFrame('mobile', 70), 'Cookie with a fresh crack']] },
+  {
+    par: 0.12,
+    mt: '-8%',
+    tiles: [
+      ['3/4', asset.heroFrame('mobile', 1), 'Macro of a TEM Choco Chips cookie'],
+      ['1/1', asset.category('round'), 'A stack of TEM round cookies'],
+      ['4/5', asset.moment('treat'), 'A cookie and a coffee by the window'],
+      ['1/1', asset.heroFrame('desktop', 96), 'Cookie breaking apart'],
+      ['3/4', asset.category('cups'), 'Cookie cups filled with ganache'],
+    ],
+  },
+  {
+    par: -0.1,
+    mt: '-30%',
+    tiles: [
+      ['4/5', asset.category('cakes'), 'A cookie cake with buttercream swirls'],
+      ['3/4', asset.heroFrame('mobile', 95), 'Cookie halves with melted chocolate'],
+      ['1/1', asset.moment('gift'), 'A gift box of six cookies'],
+      ['4/5', asset.category('mini'), 'A box of mini cookies'],
+      ['3/4', asset.heroFrame('mobile', 50), 'Whole Choco Chips cookie'],
+    ],
+  },
+  {
+    par: 0.18,
+    mt: '-16%',
+    tiles: [
+      ['1/1', asset.heroFrame('desktop', 1), 'Chocolate chips close-up'],
+      ['3/4', asset.category('sticks'), 'Cookie sticks dipped in chocolate'],
+      ['4/5', asset.moment('birthday'), 'A birthday cookie cake'],
+      ['3/4', asset.category('shots'), 'Cookie shots filled with milk'],
+      ['1/1', asset.moment('gathering'), 'Mini cookies shared at the table'],
+    ],
+  },
 ];
 
 export const InstaStrip = () => {
@@ -143,6 +173,7 @@ export const InstaStrip = () => {
 export const FinalCta = () => {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
+  const mobile = useIsMobile(820);
   const ref = useRef<HTMLElement>(null);
   const logo = useRef<HTMLDivElement>(null);
   const cta = useRef<HTMLDivElement>(null);
@@ -163,7 +194,7 @@ export const FinalCta = () => {
   return (
     <section ref={ref} data-dark="1" aria-label="Order now" style={{ position: 'relative', height: reduced ? 'auto' : '220vh', background: '#711D2C', color: '#F0EED9' }}>
       <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(28px,5vh,48px)', padding: '0 20px' }}>
-        <img src={asset.heroFrame('desktop', 240)} alt="" aria-hidden="true" loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, pointerEvents: 'none' }} />
+        <img src={mobile ? asset.heroFrame('mobile', 180) : asset.heroFrame('desktop', 240)} alt="" aria-hidden="true" loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, pointerEvents: 'none' }} />
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%,rgba(113,29,44,0) 0%,rgba(58,11,20,.55) 100%)', pointerEvents: 'none' }} />
         <div ref={logo} style={{ position: 'relative', width: 'min(78vw,980px)', willChange: 'transform', transformOrigin: '50% 50%' }}>
           <Logo style={{ width: '100%' }} />

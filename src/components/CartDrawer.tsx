@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Cookie } from './Cookie';
+import { ProductVisual } from './ProductVisual';
 import { useIsMobile, useShop } from '../lib/shop';
 import { useProducts } from '../lib/store';
 import { fmt } from '../lib/format';
@@ -88,7 +89,7 @@ export const CartDrawer = () => {
             return (
               <div key={l.key} style={{ display: 'flex', gap: 14, padding: 12, borderRadius: 18, background: '#F8F6EC', border: '1px solid #E5DCC5' }}>
                 <div style={{ width: 72, flex: '0 0 72px', borderRadius: 14, background: '#E5DCC5', padding: 6, alignSelf: 'flex-start' }}>
-                  <Cookie flavour={l.flavour} flat />
+                  <ProductVisual pid={l.pid} flavour={l.flavour} flat />
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
@@ -141,7 +142,7 @@ export const CartDrawer = () => {
                     style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px dashed #C7B593', background: 'transparent', borderRadius: 14, padding: 8, cursor: 'pointer', textAlign: 'left', color: '#1E1310' }}
                   >
                     <div style={{ width: 40, flex: '0 0 40px' }}>
-                      <Cookie flavour={p.flavour} flat />
+                      <ProductVisual pid={p.id} flavour={p.flavour} flat />
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>+ {p.name}</span>
                   </button>

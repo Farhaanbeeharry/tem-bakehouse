@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cookie } from '../components/Cookie';
+import { ProductVisual } from '../components/ProductVisual';
 import { customText, lineMeta } from '../components/CartDrawer';
 import { DEMO_CUSTOMER_ID } from '../data/catalog';
 import { fmt, isoDay, niceDate } from '../lib/format';
@@ -301,7 +301,7 @@ export const CheckoutPage = () => {
           {cart.map((l) => (
             <div key={l.key} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 48, flex: '0 0 48px' }}>
-                <Cookie flavour={l.flavour} flat />
+                <ProductVisual pid={l.pid} flavour={l.flavour} flat />
               </div>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 600 }}>

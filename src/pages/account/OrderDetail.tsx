@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cookie } from '../../components/Cookie';
+import { ProductVisual } from '../../components/ProductVisual';
 import { StatusBadge } from '../../components/StatusBadge';
 import { customText, lineMeta } from '../../components/CartDrawer';
 import { DONE_STATUSES, flow, flowLabels, statuses, type StatusId } from '../../data/catalog';
@@ -245,7 +245,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
             {o.items.map((l) => (
               <div key={l.key} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <div style={{ width: 44, flex: '0 0 44px' }}>
-                  <Cookie flavour={l.flavour} flat />
+                  <ProductVisual pid={l.pid} flavour={l.flavour} flat />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>

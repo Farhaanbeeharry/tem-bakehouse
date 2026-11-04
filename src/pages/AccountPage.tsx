@@ -183,7 +183,7 @@ export const AccountPage = () => {
 
       {!ref && tab === 'favs' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,240px),1fr))', gap: 20 }}>
+          <div className="product-grid">
             {P.filter((p) => favs.includes(p.id)).map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}
