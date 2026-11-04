@@ -62,7 +62,18 @@ const SEAM_GLSL = 'float seam(float z, float y){ return 0.05*sin(z*5.3+0.7)+0.03
 
 export const insideXZ = (x: number, z: number) => Math.hypot(x, z) < edgeR(Math.atan2(z, x)) * 0.999;
 
-export const buildBody = (NR: number, NS: number) => {
+/** Where on the photo a vertex samples: the top maps directly; the side wall walks inward as it goes down so the crust texture wraps instead of stretching. */
+export const photoRadius = (top: boolean, u: number) => {
+  const rim = 0.9 * 0.93;
+  if (top) return u <= 0.9 ? u * 0.93 : rim - ((u - 0.9) / 0.1) * 0.22;
+  return u >= 0.9 ? rim - 0.22 - ((1 - u) / 0.1) * 0.06 : 0.5;
+};
+
+/** Disk UV: the cookie's top maps onto a circle of radius 0.45 centred in the texture. */
+export const diskUV = (u: number, th: number): [number, number] => [Math.cos(th) * u * 0.45 + 0.5, Math.sin(th) * u * 0.45 + 0.5];
+
+/** `relief(u, th)` adds height to the top surface (photo-textured cookies). */
+export const buildBody = (NR: number, NS: number, relief?: (u: number, th: number) => number) => {
   const pos: number[] = [], uv: number[] = [], idx: number[] = [];
   const rows = NR * 2 + 1;
   for (let i = 0; i < rows; i++) {
@@ -71,14 +82,17 @@ export const buildBody = (NR: number, NS: number) => {
       const th = (j / NS) * Math.PI * 2;
       const r = Math.max(1e-4, u) * edgeR(th) * (top ? 1 : 0.985 + 0.015 * u);
       const x = Math.cos(th) * r, z = Math.sin(th) * r;
-      pos.push(x, top ? topAt(x, z) : bottomAt(u), z);
-      uv.push(x * 0.45 + 0.5, z * 0.45 + 0.5);
+      const inner = Math.max(0, Math.min(1, (0.985 - u) / 0.12));
+      const y = top ? topAt(x, z) + (relief ? relief(u, th) * inner : 0) : bottomAt(u);
+      pos.push(x, y, z);
+      if (relief) uv.push(...diskUV(photoRadius(top, u), th));
+      else uv.push(x * 0.45 + 0.5, z * 0.45 + 0.5);
     }
   }
   const W = NS + 1;
   for (let i = 0; i < rows - 1; i++) for (let j = 0; j < NS; j++) {
     const a = i * W + j, b = a + 1, c = a + W, d = c + 1;
-    idx.push(a, c, b, b, c, d);
+    idx.push(a, b, c, b, d, c);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));

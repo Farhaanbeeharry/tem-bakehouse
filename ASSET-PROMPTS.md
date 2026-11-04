@@ -21,6 +21,8 @@ The scroll-sequence hero frames are already in `public/assets/hero/`, so they're
 
 ## 1. Flavour Room 3D models: the 6 featured flavours
 
+> **Current state:** the six featured cookies already render as realistic 3D. The site wraps an AI-generated top-down photo (`public/assets/products/{flavour}/tem_{flavour}_top.webp`) onto a 3D cookie, with relief built from the photo and a photographed crumb interior when it breaks. A GLB from this section replaces that automatically, but you don't need one for the demo. To change a cookie's 3D look, replace its `_top.webp` with a straight-down photo of the real cookie, unwrapped the same way.
+
 | Flavour | File |
 |---|---|
 | Choco Chips | `public/models/tem_choco-chips.glb` |
@@ -210,8 +212,9 @@ Path: `public/assets/gallery/tem_gallery_01.webp` … `tem_gallery_12.webp`. Web
 ## Checklist
 
 - [ ] 6 GLB models with `cookie_left` / `cookie_right` halves, in `public/models/`
-- [ ] 6 featured flavours × `_whole.png` / `_broken.png` / `_crumb.png`
-- [ ] 5 other flavours × 3 images
+- [x] `_whole.png` for 9 flavours (AI-generated, background removed). Still to do: Biscoff, Salted Caramel
+- [x] `_top.webp` 3D textures for the 6 featured flavours (AI-generated)
+- [ ] `_broken.png` and `_crumb.png` for all 11 flavours (the Figma AI credit limit was reached; the site works without them)
 - [x] 6 category cards (AI-generated, replace with real photos when available)
 - [x] 4 moment cards (AI-generated)
 - [ ] 12 gallery images (real photos preferred)

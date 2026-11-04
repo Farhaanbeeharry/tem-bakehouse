@@ -6,6 +6,7 @@ export const asset = {
     `/assets/hero/${device}/tem_hero_${device}_${String(n).padStart(4, '0')}.webp`,
   productWhole: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_whole.png`,
   productBroken: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_broken.png`,
+  productTop: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_top.webp`,
   productCrumb: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_crumb.png`,
   model: (flavour: string) => `/models/tem_${flavour}.glb`,
   category: (id: string) => `/assets/categories/tem_category_${id}_1200x1600.webp`,

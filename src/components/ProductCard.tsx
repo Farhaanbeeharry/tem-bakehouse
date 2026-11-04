@@ -27,7 +27,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
         {photo && hasPhoto ? (
           <img src={photo} alt={p.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
         ) : (
-          <div style={{ width: '68%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
+          <div style={{ width: '80%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
             <Cookie flavour={p.flavour} />
           </div>
         )}

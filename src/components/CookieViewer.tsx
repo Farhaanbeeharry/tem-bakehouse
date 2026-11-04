@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { asset, probeFile } from '../lib/assets';
+import { FEATURED_FLAVOURS } from '../data/catalog';
 import type { CookieScene } from '../three/CookieScene';
 
 type Props = { flavour: string; broken: boolean; onBreakChange?: (on: boolean) => void };
@@ -23,6 +24,8 @@ export const CookieViewer = ({ flavour, broken, onBreakChange }: Props) => {
           flavour: initial.current,
           modelUrl: asset.model,
           hasModel: (id) => probeFile(asset.model(id)),
+          photoUrl: asset.productTop,
+          preloadPhotos: FEATURED_FLAVOURS,
           onBreak: (on) => breakCb.current?.(on),
         });
         sceneRef.current = scene;

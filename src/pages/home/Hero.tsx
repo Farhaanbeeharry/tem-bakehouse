@@ -14,6 +14,34 @@ const RAIL_RANGES = [0, 0.3, 0.62, 0.86, 1.01];
 
 type Seq = { N: number; imgs: (HTMLImageElement | undefined)[]; ok: boolean };
 
+// Scroll position (0–1) → animation position (0–1). Flat-ish stretches hold the scene still while
+// the title, each caption and the closing logo are fully on screen, so continuous scrolling can't skip them.
+const KNOTS: [number, number][] = [
+  [0, 0],
+  [0.06, 0.015],
+  [0.2, 0.36],
+  [0.29, 0.44],
+  [0.37, 0.555],
+  [0.46, 0.625],
+  [0.54, 0.73],
+  [0.63, 0.79],
+  [0.78, 0.94],
+  [1, 1],
+];
+
+const remap = (raw: number) => {
+  for (let i = 1; i < KNOTS.length; i++) {
+    const [x1, y1] = KNOTS[i];
+    if (raw <= x1) {
+      const [x0, y0] = KNOTS[i - 1];
+      const t = (raw - x0) / (x1 - x0);
+      const s = t * t * (3 - 2 * t);
+      return y0 + (y1 - y0) * s;
+    }
+  }
+  return 1;
+};
+
 export const Hero = () => {
   const navigate = useNavigate();
   const mobile = useIsMobile();
@@ -98,10 +126,9 @@ export const Hero = () => {
     c.style.opacity = '1';
   };
 
-  useScrollTick(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const p = reduced ? 0 : sectionProgress(root);
+  const anim = useRef({ cur: -1, target: 0, raf: 0 });
+
+  const apply = (p: number) => {
     const tk = seg(p, 0.03, 0.15);
     if (titleRef.current) {
       titleRef.current.style.opacity = String(1 - tk);
@@ -125,6 +152,31 @@ export const Hero = () => {
       logoRef.current.style.transform = `translate(-50%,-50%) scale(${(1.08 - 0.08 * e).toFixed(3)})`;
     }
     draw(p);
+  };
+
+  useEffect(() => {
+    const a = anim.current;
+    return () => cancelAnimationFrame(a.raf);
+  }, []);
+
+  useScrollTick(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const a = anim.current;
+    a.target = reduced ? 0 : remap(sectionProgress(root));
+    if (a.cur < 0 || reduced) {
+      a.cur = a.target;
+      apply(a.cur);
+      return;
+    }
+    const step = () => {
+      const d = a.target - a.cur;
+      a.cur = Math.abs(d) < 0.0004 ? a.target : a.cur + d * 0.14;
+      apply(a.cur);
+      a.raf = a.cur === a.target ? 0 : requestAnimationFrame(step);
+    };
+    if (!a.raf) a.raf = requestAnimationFrame(step);
+    else apply(a.cur);
   }, [ready, tick, reduced, mobile]);
 
   const scrollToFlavours = () => {
@@ -137,7 +189,7 @@ export const Hero = () => {
       ref={rootRef}
       data-dark="1"
       aria-label="TEM Bakehouse — Made for the Moment"
-      style={{ position: 'relative', height: reduced ? '100vh' : mobile ? '440vh' : '560vh', background: '#3A0B14' }}
+      style={{ position: 'relative', height: reduced ? '100vh' : mobile ? '620vh' : '760vh', background: '#3A0B14' }}
     >
       <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: 'radial-gradient(ellipse 80% 70% at 50% 46%,#8C2A3A 0%,#711D2C 44%,#3A0B14 100%)', color: '#F0EED9' }}>
         <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', opacity: 0, transition: 'opacity .6s' }} />

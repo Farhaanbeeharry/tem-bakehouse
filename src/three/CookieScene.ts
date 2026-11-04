@@ -1,11 +1,21 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
-  BOTTOM_Y, LOOKS, buildBody, buildFace, chipGeo, crumbGeo, crumbTextures, doughTextures, insideXZ, rng, seam, seamMaterial, topAt,
+  BOTTOM_Y, LOOKS, buildBody, photoRadius, buildFace, chipGeo, crumbGeo, crumbTextures, doughTextures, insideXZ, rng, seam, seamMaterial, topAt,
   type ChipKind, type FlavourLook,
 } from './proceduralCookie';
 
-type Options = { flavour: string; modelUrl?: (flavour: string) => string; hasModel?: (flavour: string) => Promise<boolean>; onBreak?: (on: boolean) => void };
+type Options = {
+  flavour: string;
+  modelUrl?: (flavour: string) => string;
+  hasModel?: (flavour: string) => Promise<boolean>;
+  /** Top-down photo unwrapped to a disk (see public/assets/products/{id}/tem_{id}_top.webp). */
+  photoUrl?: (flavour: string) => string;
+  preloadPhotos?: string[];
+  onBreak?: (on: boolean) => void;
+};
+
+type PhotoLook = { map: THREE.Texture; rough: THREE.Texture; geo: THREE.BufferGeometry };
 
 type CrumbDatum = { o: THREE.Vector3; v: THREE.Vector3; s: number; spin: THREE.Vector3; delay: number };
 
@@ -42,6 +52,11 @@ export class CookieScene {
   private strandSeeds = Array.from({ length: 6 }, (_, i) => ({ z: -0.55 + i * 0.22 + (i % 2) * 0.05, y: 0.02 + (i % 3) * 0.05, r: 0.016 + (i % 3) * 0.008, snap: 0.42 + i * 0.045 }));
   private texCache: Record<string, { d: ReturnType<typeof doughTextures>; c: ReturnType<typeof crumbTextures> }> = {};
   private models: Record<string, Promise<ModelEntry | null>> = {};
+  private photos: Record<string, Promise<PhotoLook | null>> = {};
+  private photoReady: Record<string, PhotoLook | null> = {};
+  private baseBodyGeo!: THREE.BufferGeometry;
+  private NR = 150;
+  private NS = 360;
   private activeModel: ModelEntry | null = null;
   private look: FlavourLook = LOOKS['choco-chips'];
   private flavourToken = 0;
@@ -131,7 +146,10 @@ export class CookieScene {
     });
 
     const NR = this.low ? 90 : 150, NS = this.low ? 200 : 360;
+    this.NR = NR;
+    this.NS = NS;
     const bodyGeo = buildBody(NR, NS);
+    this.baseBodyGeo = bodyGeo;
     const faceGeo = buildFace(this.low ? 140 : 220, this.low ? 26 : 44, 1.7);
     this.halves.forEach((hv, i) => {
       const side = hv.userData.side as number;
@@ -186,6 +204,7 @@ export class CookieScene {
     this.resizeObs.observe(container);
 
     this.setFlavour(opts.flavour, false);
+    if (opts.photoUrl) (opts.preloadPhotos ?? []).forEach((id) => this.loadPhoto(id));
     this.raf = requestAnimationFrame(this.frame);
   }
 
@@ -194,8 +213,15 @@ export class CookieScene {
     if (spin) this.st.spin += Math.PI * 1.2;
     this.st.breakTarget = 0;
     this.look = LOOKS[id] ?? LOOKS['choco-chips'];
-    this.applyProcedural(id);
+    const ready = this.photoReady[id];
+    if (ready) this.applyPhoto(id, ready);
+    else this.applyProcedural(id);
     this.showModel(null);
+    if (ready === undefined && this.opts.photoUrl) {
+      this.loadPhoto(id).then((look) => {
+        if (look && token === this.flavourToken && !this.disposed) this.applyPhoto(id, look);
+      });
+    }
     const { hasModel, modelUrl } = this.opts;
     if (!hasModel || !modelUrl) return;
     hasModel(id).then((ok) => {
@@ -204,6 +230,92 @@ export class CookieScene {
         if (entry && token === this.flavourToken && !this.disposed) this.showModel(entry);
       });
     });
+  }
+
+  private loadPhoto(id: string) {
+    if (!this.photos[id]) {
+      const url = this.opts.photoUrl!(id);
+      this.photos[id] = new Promise<PhotoLook | null>((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          if (this.disposed) return resolve(null);
+          const S = 512;
+          const cv = document.createElement('canvas');
+          cv.width = cv.height = S;
+          const g = cv.getContext('2d', { willReadFrequently: true })!;
+          g.drawImage(img, 0, 0, S, S);
+          const data = g.getImageData(0, 0, S, S).data;
+          const lumAt = (px: number, py: number) => {
+            const x = Math.min(S - 1, Math.max(0, Math.round(px))), y = Math.min(S - 1, Math.max(0, Math.round(py)));
+            const o = (y * S + x) * 4;
+            return (data[o] * 0.299 + data[o + 1] * 0.587 + data[o + 2] * 0.114) / 255;
+          };
+          let sum = 0;
+          for (let i = 0; i < data.length; i += 16) sum += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+          const mean = sum / (data.length / 16);
+          const relief = (u: number, th: number) => {
+            const ru = photoRadius(true, u);
+            const px = (Math.cos(th) * ru * 0.45 + 0.5) * S, py = (1 - (Math.sin(th) * ru * 0.45 + 0.5)) * S;
+            let l = 0;
+            for (let k = 0; k < 5; k++) l += lumAt(px + [0, 2, -2, 0, 0][k], py + [0, 0, 0, 2, -2][k]);
+            return (l / 5 - mean) * 0.06;
+          };
+          const geo = buildBody(this.NR, this.NS, relief);
+          const rc = document.createElement('canvas');
+          rc.width = rc.height = S;
+          const rg = rc.getContext('2d')!;
+          const ri = rg.createImageData(S, S);
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i] / 255, gg = data[i + 1] / 255, b = data[i + 2] / 255;
+            const lum = r * 0.299 + gg * 0.587 + b * 0.114;
+            const chocolate = Math.max(0, Math.min(1, (0.42 - lum) / 0.25)) * Math.max(0, Math.min(1, (r - b) * 4));
+            const v = Math.round((0.86 - chocolate * 0.55) * 255);
+            ri.data[i] = ri.data[i + 1] = ri.data[i + 2] = v;
+            ri.data[i + 3] = 255;
+          }
+          rg.putImageData(ri, 0, 0);
+          const map = new THREE.Texture(img);
+          map.colorSpace = THREE.SRGBColorSpace;
+          map.anisotropy = 8;
+          map.needsUpdate = true;
+          const rough = new THREE.CanvasTexture(rc);
+          resolve({ map, rough, geo });
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+      }).then((look) => {
+        this.photoReady[id] = look;
+        return look;
+      });
+    }
+    return this.photos[id];
+  }
+
+  private applyPhoto(id: string, look: PhotoLook) {
+    if (!this.texCache[id]) this.texCache[id] = { d: doughTextures(this.look, this.low ? 256 : 512), c: crumbTextures(this.look, 512) };
+    const { c } = this.texCache[id];
+    this.bodies.forEach((b) => {
+      b.geometry = look.geo;
+      const m = b.material as THREE.MeshPhysicalMaterial;
+      m.map = look.map;
+      m.bumpMap = look.map;
+      m.bumpScale = 1.4;
+      m.roughnessMap = look.rough;
+      m.roughness = 1;
+      m.needsUpdate = true;
+    });
+    this.faces.forEach((f) => {
+      const m = f.material as THREE.MeshPhysicalMaterial;
+      m.map = c.map;
+      m.bumpMap = c.bump;
+      m.needsUpdate = true;
+    });
+    this.crumbMat.map = c.map;
+    this.crumbMat.bumpMap = c.bump;
+    this.crumbMat.needsUpdate = true;
+    this.shardMat.color.set(this.look.chip || '#2b170e');
+    this.chipGroups.forEach((g) => g.clear());
   }
 
   setBroken(on: boolean) {
@@ -226,6 +338,7 @@ export class CookieScene {
       if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
       else mat?.dispose();
     });
+    Object.values(this.photoReady).forEach((p) => p && [p.map, p.rough, p.geo].forEach((x) => x.dispose()));
     Object.values(this.texCache).forEach(({ d, c }) => [d.map, d.bump, d.rough, c.map, c.bump].forEach((t) => t.dispose()));
     this.renderer.dispose();
     el.remove();
@@ -273,9 +386,12 @@ export class CookieScene {
     if (!this.texCache[id]) this.texCache[id] = { d: doughTextures(F, S), c: crumbTextures(F, 512) };
     const { d, c } = this.texCache[id];
     this.bodies.forEach((b) => {
+      b.geometry = this.baseBodyGeo;
       const m = b.material as THREE.MeshPhysicalMaterial;
       m.map = d.map;
       m.bumpMap = d.bump;
+      m.bumpScale = 2.2;
+      m.roughness = 0.85;
       m.roughnessMap = d.rough;
       m.needsUpdate = true;
     });

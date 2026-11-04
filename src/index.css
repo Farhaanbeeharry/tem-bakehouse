@@ -453,7 +453,8 @@ textarea.input {
 }
 
 .pill-tabs button {
-  flex: 1;
+  flex: 1 0 auto;
+  white-space: nowrap;
   border: none;
   background: transparent;
   border-radius: 999px;

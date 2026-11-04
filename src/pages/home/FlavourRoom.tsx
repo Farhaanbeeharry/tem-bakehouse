@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CookieViewer } from '../../components/CookieViewer';
 import { flavourById } from '../../data/catalog';
-import { asset, probeFile, useImageExists } from '../../lib/assets';
+import { asset, probeFile } from '../../lib/assets';
 import { fmt, dietLabel } from '../../lib/format';
 import { useShop } from '../../lib/shop';
 import { useProducts } from '../../lib/store';
 
-type StageMode = 'model' | 'photo' | 'procedural';
+type StageMode = 'model' | 'textured';
 
 const useStageMode = (flavour: string): StageMode | null => {
   const [model, setModel] = useState<{ id: string; ok: boolean } | null>(null);
-  const photo = useImageExists(asset.productWhole(flavour));
   useEffect(() => {
     let alive = true;
     probeFile(asset.model(flavour)).then((ok) => alive && setModel({ id: flavour, ok }));
@@ -19,9 +18,8 @@ const useStageMode = (flavour: string): StageMode | null => {
       alive = false;
     };
   }, [flavour]);
-  if (!model || model.id !== flavour || photo === null) return null;
-  if (model.ok) return 'model';
-  return photo ? 'photo' : 'procedural';
+  if (!model || model.id !== flavour) return null;
+  return model.ok ? 'model' : 'textured';
 };
 
 export const FlavourRoom = () => {
@@ -31,7 +29,6 @@ export const FlavourRoom = () => {
   const featured = useMemo(() => P.filter((p) => p.cat === 'round' && p.featured && p.status === 'available'), [P]);
   const [idx, setIdx] = useState(0);
   const [broken, setBroken] = useState(false);
-  const [spin, setSpin] = useState(0);
   const fi = featured.length ? ((idx % featured.length) + featured.length) % featured.length : 0;
   const fp = featured[fi];
   const flavour = fp?.flavour ?? 'choco-chips';
@@ -42,12 +39,10 @@ export const FlavourRoom = () => {
 
   const pick = (i: number) => {
     if (i === fi) return;
-    setSpin((s) => s + (i > fi ? 120 : -120));
     setIdx(i);
     setBroken(false);
   };
 
-  const use3d = mode !== 'photo';
 
   return (
     <section id="flavours" aria-label="Featured cookies" style={{ padding: 'clamp(80px,10vw,140px) var(--gutter)', background: '#F0EED9' }}>
@@ -77,26 +72,10 @@ export const FlavourRoom = () => {
               {ff.name}
             </div>
 
-            {mode === 'photo' && (
-              <>
-                <img
-                  key={'w' + flavour}
-                  src={asset.productWhole(flavour)}
-                  alt={`${ff.name} cookie`}
-                  style={{ position: 'absolute', left: '9%', top: '9%', width: '82%', height: '82%', objectFit: 'contain', opacity: broken ? 0 : 1, transform: `rotate(${spin}deg)`, transition: 'opacity .7s ease, transform 1.1s var(--ease)', filter: 'drop-shadow(0 34px 40px rgba(30,19,16,.35))' }}
-                />
-                <img
-                  key={'b' + flavour}
-                  src={asset.productBroken(flavour)}
-                  alt={`${ff.name} cookie broken in half`}
-                  style={{ position: 'absolute', left: '4%', top: '6%', width: '92%', height: '88%', objectFit: 'contain', opacity: broken ? 1 : 0, transform: `scale(${broken ? 1 : 0.92})`, transition: 'opacity .7s ease, transform 1.1s var(--ease)', filter: 'drop-shadow(0 34px 40px rgba(30,19,16,.35))' }}
-                />
-              </>
-            )}
-            {use3d && <CookieViewer flavour={flavour} broken={broken} onBreakChange={setBroken} />}
+            {<CookieViewer flavour={flavour} broken={broken} onBreakChange={setBroken} />}
 
             <div style={{ position: 'absolute', left: 18, top: 16, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.16em', color: '#6E5C4D', pointerEvents: 'none' }}>
-              {mode === 'photo' ? 'TAP “BREAK IT OPEN”' : mode ? (touch ? 'DRAG TO TURN · TAP “BREAK IT OPEN”' : 'DRAG TO TURN · DOUBLE-CLICK TO BREAK') : ''}
+              {mode ? (touch ? 'DRAG TO TURN · TAP “BREAK IT OPEN”' : 'DRAG TO TURN · DOUBLE-CLICK TO BREAK') : ''}
             </div>
             <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <button type="button" className="btn btn-dark" style={{ padding: '13px 20px' }} onClick={() => setBroken((b) => !b)}>
