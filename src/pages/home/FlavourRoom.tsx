@@ -65,7 +65,7 @@ export const FlavourRoom = () => {
           <div style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: 'max(320px, calc(100vh - 140px))', justifySelf: 'center', borderRadius: 32, background: 'radial-gradient(ellipse at 50% 40%,#F2EDDC 0%,#E5DCC5 55%,#D3C4A6 100%)', overflow: 'hidden' }}>
             <div
               aria-hidden="true"
-              style={{ position: 'absolute', left: '-2%', right: '-2%', top: '6%', textAlign: 'center', fontWeight: 900, fontStretch: '125%', fontSize: 'clamp(64px,11vw,190px)', lineHeight: 0.8, letterSpacing: '-0.04em', textTransform: 'uppercase', color: 'transparent', WebkitTextStroke: '1.5px #C7B593', whiteSpace: 'nowrap', overflow: 'hidden' }}
+              style={{ position: 'absolute', left: '-2%', right: '-2%', top: 'max(6%, 40px)', textAlign: 'center', fontWeight: 900, fontStretch: '125%', fontSize: 'clamp(64px,11vw,190px)', lineHeight: 0.8, letterSpacing: '-0.04em', textTransform: 'uppercase', color: 'transparent', WebkitTextStroke: '1.5px #C7B593', whiteSpace: 'nowrap', overflow: 'hidden' }}
             >
               {ff.name}
             </div>

@@ -71,7 +71,8 @@ export const AccountPage = () => {
 
   const tab = ref ? 'orders' : (params.get('tab') ?? 'overview');
   const mine = orders.filter((o) => o.customer === DEMO_CUSTOMER_ID).sort((a, b) => (b.created + b.ref).localeCompare(a.created + a.ref));
-  const detail = ref ? mine.find((o) => o.ref === ref) ?? orders.find((o) => o.ref === ref) : undefined;
+  // Only the signed-in customer's own orders, never someone else's by reference.
+  const detail = ref ? mine.find((o) => o.ref === ref) : undefined;
   const active = mine.filter((o) => !DONE_STATUSES.includes(o.status));
   const needsAction = mine.filter((o) => statuses[o.status].act);
 

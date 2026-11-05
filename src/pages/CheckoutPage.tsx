@@ -24,7 +24,6 @@ const buildMonth = (offset: number, settings: Settings, orders: Order[]) => {
   orders.forEach((o) => {
     if (!['declined', 'cancelled', 'expired'].includes(o.status)) counts[o.date] = (counts[o.date] || 0) + 1;
   });
-  const sampleFull = isoDay(7);
   const days: Day[] = Array.from({ length: first }, () => null);
   for (let d = 1; d <= n; d++) {
     const dt = new Date(y, m, d);
@@ -35,7 +34,7 @@ const buildMonth = (offset: number, settings: Settings, orders: Order[]) => {
     else if (diff < settings.leadDays) why = `Needs ${settings.leadDays} days' notice`;
     else if (settings.closedWeekdays.includes(dt.getDay())) why = 'Closed';
     else if (settings.holidays.includes(iso)) why = 'Holiday closure';
-    else if (iso === sampleFull || (counts[iso] || 0) >= settings.dailyCapacity) why = 'Fully booked';
+    else if ((counts[iso] || 0) >= settings.dailyCapacity) why = 'Fully booked';
     days.push({ iso, label: String(d), why });
   }
   return { days, label: base.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }), anyOpen: days.some((x) => x && !x.why) };

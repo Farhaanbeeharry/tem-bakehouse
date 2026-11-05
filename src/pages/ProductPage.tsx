@@ -53,11 +53,20 @@ const ProductDetail = ({ id }: { id: string }) => {
   const cat = categories.find((c) => c.id === p.cat)!;
   const recs = P.filter((x) => x.id !== p.id && x.status === 'available' && (x.cat !== p.cat || x.featured)).slice(0, 4);
   const set = (o: Partial<typeof pd>) => setPd((x) => ({ ...x, ...o }));
-  const boxFlavours = flavours.filter((o) => o.status === 'available' && (pd.diet === 'regular' || o.diet !== 'regular'));
+  // With Gluten-free chosen, only flavours that come in a GF version can be picked.
+  const dietFlavours = (diet: 'regular' | 'gf') => flavours.filter((o) => o.status === 'available' && (diet === 'regular' || o.diet !== 'regular'));
+  const boxFlavours = dietFlavours(pd.diet);
   const boxLeft = p.boxOf ? p.boxOf - pd.box.length : 0;
   const needsFilling = !!p.fillings && !pd.filling;
   const blocked = soon || boxLeft > 0 || needsFilling;
-  const setDiet = (diet: 'regular' | 'gf') => set({ diet, box: diet === 'gf' ? pd.box.filter((id) => flavourById[id].diet !== 'regular') : pd.box });
+  const setDiet = (diet: 'regular' | 'gf') => {
+    const ok = dietFlavours(diet);
+    set({
+      diet,
+      box: pd.box.filter((id) => ok.some((o) => o.id === id)),
+      flavour: p.flavourPick && !ok.some((o) => o.id === pd.flavour) ? (ok[0]?.id ?? pd.flavour) : pd.flavour,
+    });
+  };
   const boxAdd = (id: string) => boxLeft > 0 && set({ box: [...pd.box, id] });
   const boxRemove = (id: string) => {
     const i = pd.box.lastIndexOf(id);
@@ -97,12 +106,14 @@ const ProductDetail = ({ id }: { id: string }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 'clamp(28px,5vw,80px)', alignItems: 'start' }}>
         <div style={{ position: 'sticky', top: 90, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 28, background: '#E5DCC5', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
-            {p.boxOf ? (
-              <div style={{ position: 'absolute', inset: '8%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6%' }} aria-label={`Your box: ${pd.box.length} of ${p.boxOf} chosen`}>
+            {p.boxOf && pd.box.length === 0 && shapeSrc && shapeOk ? (
+              <img key="shape" src={shapeSrc} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
+            ) : p.boxOf ? (
+              <div style={{ position: 'absolute', inset: '8%', display: 'grid', gridTemplateColumns: '1fr 1fr', alignContent: 'center', gap: '6%' }} aria-label={`Your box: ${pd.box.length} of ${p.boxOf} chosen`}>
                 {Array.from({ length: p.boxOf }, (_, i) => {
                   const id = pd.box[i];
                   return (
-                    <div key={i} style={{ display: 'grid', placeItems: 'center', borderRadius: '50%', border: id ? 'none' : '2px dashed #C7B593' }}>
+                    <div key={i} style={{ display: 'grid', placeItems: 'center', aspectRatio: '1 / 1', borderRadius: '50%', border: id ? 'none' : '2px dashed #C7B593' }}>
                       {id ? (
                         <div key={id + i} style={{ width: '100%', animation: 'temFade .4s ease both' }}>
                           <Cookie flavour={id} />
@@ -119,7 +130,7 @@ const ProductDetail = ({ id }: { id: string }) => {
                 <Cookie flavour={f.id} />
               </div>
             )}
-            {view === 'shape' && shapeSrc && <img key="shape" src={shapeSrc} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
+            {!p.boxOf && view === 'shape' && shapeSrc && <img key="shape" src={shapeSrc} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
             {view === 'broken' && <img key="broken" src={asset.productBroken(f.id)} alt={`${f.name} broken in half`} style={{ width: '88%', height: '88%', objectFit: 'contain', animation: 'temFade .5s ease both' }} />}
             {view === 'crumb' && <img key="crumb" src={asset.productCrumb(f.id)} alt={`Inside a ${f.name} cookie`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
             {soon && !wholeOk && (
@@ -199,9 +210,9 @@ const ProductDetail = ({ id }: { id: string }) => {
             <label className="field">
               Flavour
               <select className="input" value={pd.flavour} onChange={(e) => set({ flavour: e.target.value })}>
-                {flavours.map((o) => (
-                  <option key={o.id} value={o.id} disabled={o.status !== 'available'}>
-                    {o.name + (o.status === 'soon' ? ' (coming soon)' : '')}
+                {dietFlavours(pd.diet).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
                   </option>
                 ))}
               </select>

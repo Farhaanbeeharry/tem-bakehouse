@@ -93,6 +93,7 @@ export const ProductsView = () => {
                 <td style={{ padding: '10px 14px' }}>{categories.find((c) => c.id === p.cat)?.name ?? p.cat}</td>
                 <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                   {fmt(p.price)}
+                  {p.boxOf && <span className="adm-small"> per cookie</span>}
                   {p.price !== p.basePrice && <span className="adm-small"> (was {fmt(p.basePrice)})</span>}
                 </td>
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{dietShort(p.diet)}</td>

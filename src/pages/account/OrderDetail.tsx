@@ -39,7 +39,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
   const est = o.estimate ?? estimateOf(o.items);
   const depState = o.depositPaid > 0 ? 'Verified' : o.status === 'deposit_submitted' ? 'Submitted — awaiting verification' : o.status === 'payment_failed' ? 'Could not be verified' : o.status === 'deposit_required' ? 'Requested' : 'Not yet requested';
   const payRows: [string, string, string][] = [
-    ['Approved total', total != null ? fmt(total) : `To be confirmed by TEM (est. ${fmt(est)})`, '#1E1310'],
+    ['Approved total', total != null ? fmt(total) : `To be confirmed by TEM Bakehouse (est. ${fmt(est)})`, '#1E1310'],
     [`Deposit (${settings.depositPct}%)`, depAmt != null ? fmt(depAmt) : '—', '#1E1310'],
     ['Deposit status', depState, o.depositPaid > 0 ? '#3D5226' : o.status === 'payment_failed' ? '#8A2320' : '#1E1310'],
     ['Balance outstanding', total != null ? fmt(total - o.depositPaid - o.balancePaid) : '—', '#1E1310'],

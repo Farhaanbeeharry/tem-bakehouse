@@ -1,6 +1,9 @@
 import { useMemo, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useShop } from '../lib/shop';
+import { useStore } from '../lib/store';
+import { NotFoundPage } from './NotFoundPage';
+import { DEMO_CUSTOMER_ID } from '../data/catalog';
 
 const rng = (seed: number) => {
   let s = seed >>> 0;
@@ -16,6 +19,8 @@ export const SubmittedPage = () => {
   const { ref } = useParams();
   const navigate = useNavigate();
   const { user } = useShop();
+  // Only this visitor's own request; someone else's reference shows nothing about them.
+  const order = useStore().orders.find((o) => o.ref === ref && o.customer === DEMO_CUSTOMER_ID);
   const crumbs = useMemo(() => {
     const r = rng(7);
     return Array.from({ length: 26 }, (_, i) => {
@@ -33,6 +38,8 @@ export const SubmittedPage = () => {
       };
     });
   }, []);
+
+  if (!order) return <NotFoundPage />;
 
   return (
     <main data-dark="1" style={{ position: 'relative', minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '120px var(--gutter) 80px', background: '#4A1019', color: '#F0EED9', overflow: 'hidden' }}>
@@ -71,7 +78,7 @@ export const SubmittedPage = () => {
         <p style={{ margin: 0, fontSize: 18, lineHeight: 1.55 }}>Your request has been received. TEM Bakehouse will review it and contact you before requesting your deposit.</p>
         <ol style={{ margin: 0, padding: '18px 0 0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14, color: '#6E5C4D', borderTop: '1px solid #D9CDB4' }}>
           <li>
-            <strong style={{ color: '#1E1310' }}>Now —</strong> TEM reviews your request and preferred date.
+            <strong style={{ color: '#1E1310' }}>Now —</strong> TEM Bakehouse reviews your request and preferred date.
           </li>
           <li>
             <strong style={{ color: '#1E1310' }}>Next —</strong> if accepted, you&apos;ll be asked for a 50% deposit.
@@ -81,14 +88,20 @@ export const SubmittedPage = () => {
           </li>
         </ol>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-primary" onClick={() => navigate('/account/orders/' + ref)}>
-            Track this request
-          </button>
+          {user ? (
+            <button type="button" className="btn btn-primary" onClick={() => navigate('/account/orders/' + ref)}>
+              Track this request
+            </button>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={() => navigate('/cookies')}>
+              Browse more cookies
+            </button>
+          )}
           <button type="button" className="btn btn-outline" onClick={() => navigate('/')}>
             Back to home
           </button>
         </div>
-        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8A7A6A' }}>DEMO · no email is sent. In production an acknowledgement email goes to {user?.email ?? 'the customer'}.</p>
+        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8A7A6A' }}>DEMO · no email is sent. In production an acknowledgement email goes to {order.email || user?.email || 'the customer'}.</p>
       </div>
     </main>
   );

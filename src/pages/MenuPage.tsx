@@ -13,7 +13,8 @@ const DIETS = [
 export const MenuPage = () => {
   const [params, setParams] = useSearchParams();
   const P = useProducts();
-  const cat = params.get('cat') ?? 'all';
+  const rawCat = params.get('cat');
+  const cat = rawCat && categories.some((c) => c.id === rawCat) ? rawCat : 'all';
   const diet = params.get('diet') ?? 'all';
   const q = params.get('q') ?? '';
 

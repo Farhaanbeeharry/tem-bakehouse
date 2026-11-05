@@ -1,10 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
+import { NotFoundPage } from './NotFoundPage';
 
 const HEADINGS = ['Requests and review', 'Deposits', 'Changes to an order', 'Cancellations', 'Collection', 'Allergens'];
 
 export const PolicyPage = () => {
   const { kind } = useParams();
-  const isOrder = kind !== 'media';
+  if (kind !== 'order' && kind !== 'media') return <NotFoundPage />;
+  const isOrder = kind === 'order';
   const title = isOrder ? 'Order Policy' : 'Photo & Media Policy';
   return (
     <main className="page" style={{ maxWidth: 880 }}>

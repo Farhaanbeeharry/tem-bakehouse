@@ -177,9 +177,12 @@ export const updateOrder = (ref: string, fn: (o: Order) => Order) =>
 
 export const pushStatus = (o: Order, status: StatusId): Order => ({ ...o, status, log: [...o.log, { s: status, t: isoDay(0) }] });
 
+/** TEM-YYMM-NNN, one higher than the highest number used this month, so refs never repeat. */
 export const nextRef = (orders: Order[]) => {
-  const n = 42 + orders.filter((o) => o.ref.startsWith('TEM-2611')).length;
-  return 'TEM-2611-' + String(n).padStart(3, '0');
+  const d = new Date();
+  const prefix = `TEM-${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}-`;
+  const used = orders.filter((o) => o.ref.startsWith(prefix)).map((o) => Number(o.ref.slice(prefix.length)) || 0);
+  return prefix + String(Math.max(41, ...used) + 1).padStart(3, '0');
 };
 
 export const estimateOf = (items: OrderLine[]) => items.reduce((a, l) => a + l.unit * l.qty, 0);

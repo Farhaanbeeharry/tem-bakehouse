@@ -27,6 +27,9 @@ const STEP_VH = 0.6;
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/** Events from an open drawer, dialog or menu belong to it, not to the hero. */
+const inOverlay = (el: EventTarget | null) => el instanceof Element && !!el.closest('[role="dialog"]');
+
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName));
 
 export const Hero = () => {
@@ -185,7 +188,7 @@ export const Hero = () => {
     if (reduced) return;
     const c = ctl.current;
     const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || !inHero()) return;
+      if (e.ctrlKey || inOverlay(e.target) || !inHero()) return;
       const dir = Math.sign(e.deltaY);
       if (!dir) return;
       const now = performance.now(), abs = Math.abs(e.deltaY);
@@ -206,20 +209,20 @@ export const Hero = () => {
       c.touchY = e.touches[0].clientY;
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (!inHero()) return;
+      if (inOverlay(e.target) || !inHero()) return;
       const dir = Math.sign(c.touchY - e.touches[0].clientY);
       const next = c.step + dir;
       if (c.busy || (dir && next >= 0 && next <= LAST)) e.preventDefault();
     };
     const onTouchEnd = (e: TouchEvent) => {
-      if (!inHero() || c.busy) return;
+      if (inOverlay(e.target) || !inHero() || c.busy) return;
       const dy = c.touchY - e.changedTouches[0].clientY;
       if (Math.abs(dy) < 30) return;
       const next = c.step + Math.sign(dy);
       if (next >= 0 && next <= LAST) goToRef.current(next);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (typing(e.target) || e.altKey || e.ctrlKey || e.metaKey || !inHero()) return;
+      if (typing(e.target) || inOverlay(e.target) || document.querySelector('[role="dialog"]') || e.altKey || e.ctrlKey || e.metaKey || !inHero()) return;
       const dir = ['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.shiftKey) ? 1 : ['ArrowUp', 'PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey) ? -1 : 0;
       const next = c.step + dir;
       if (!dir || next < 0 || next > LAST) return;

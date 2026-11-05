@@ -134,7 +134,7 @@ export const OverviewView = () => {
               <span style={{ minWidth: 0 }}>
                 {o.ref} · {customerOf(o).name}
                 <br />
-                <span className="adm-small">{o.slot}</span>
+                <span className="adm-small">{o.slot}{o.location ? ' · ' + o.location : ''}</span>
               </span>
               <StatusBadge status={o.status} />
             </button>

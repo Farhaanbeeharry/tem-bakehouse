@@ -7,18 +7,43 @@ import { AuthModal } from './AuthModal';
 import { useIsMobile, useShop } from '../lib/shop';
 import { useAccountNav } from '../lib/useAccountNav';
 import { fmt } from '../lib/format';
+import { products } from '../data/catalog';
+
+const HOME_TITLE = 'TEM Bakehouse — Made for the Moment';
+const TITLES: Record<string, string> = {
+  '/cookies': 'Our Cookies',
+  '/checkout': 'Request details',
+  '/account': 'My account',
+  '/how-to-order': 'How to Order',
+  '/about': 'About',
+  '/gallery': 'Gallery',
+  '/contact': 'Contact',
+  '/policies/order': 'Order Policy',
+  '/policies/media': 'Photo & Media Policy',
+};
+
+const pageTitle = (path: string) => {
+  if (path === '/') return HOME_TITLE;
+  const product = path.startsWith('/cookies/') && products.find((p) => p.id === path.slice(9));
+  const name = product ? product.name : TITLES[path] ?? (path.startsWith('/account') ? 'My account' : path.startsWith('/submitted') ? 'Request received' : null);
+  return name ? `${name} · TEM Bakehouse` : 'Page not found · TEM Bakehouse';
+};
 
 export const StoreLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const mobile = useIsMobile();
-  const { cart, cartCount, estimate, drawerOpen, setDrawerOpen, closeAuth, toast } = useShop();
+  const { cart, cartCount, estimate, drawerOpen, setDrawerOpen, auth, closeAuth, toast } = useShop();
   const goAccount = useAccountNav();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.title = pageTitle(pathname);
   }, [pathname]);
 
   useEffect(() => {
@@ -31,6 +56,17 @@ export const StoreLayout = () => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [setDrawerOpen, closeAuth]);
+
+  // Keep the page behind the drawer, sign-in dialog and mobile menu still.
+  const overlay = drawerOpen || !!auth || menuOpen;
+  useEffect(() => {
+    if (!overlay) return;
+    const html = document.documentElement, prev = html.style.overflow;
+    html.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prev;
+    };
+  }, [overlay]);
 
   const showMobileBar = mobile && cart.length > 0 && !drawerOpen && !['/checkout'].includes(pathname) && !pathname.startsWith('/submitted');
 
@@ -54,7 +90,7 @@ export const StoreLayout = () => {
         >
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {NAV_ITEMS.map((n) => (
-              <Link key={n.to} to={n.to} className="h-card" style={{ color: 'inherit', textDecoration: 'none', fontSize: 30.7, lineHeight: 1.1, padding: '4px 0' }}>
+              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="h-card" style={{ color: 'inherit', textDecoration: 'none', fontSize: 30.7, lineHeight: 1.1, padding: '4px 0' }}>
                 {n.label}
               </Link>
             ))}
@@ -71,7 +107,11 @@ export const StoreLayout = () => {
             >
               My account
             </button>
-            <button type="button" className="btn btn-cream" style={{ minHeight: 52 }} onClick={() => navigate('/cookies')}>
+            <button type="button" className="btn btn-cream" style={{ minHeight: 52 }} onClick={() => {
+                setMenuOpen(false);
+                navigate('/cookies');
+              }}
+            >
               Order Now
             </button>
           </div>

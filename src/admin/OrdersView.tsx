@@ -10,9 +10,9 @@ import { useOrderDrawer } from './useOrderDrawer';
 const csvCell = (v: string | number) => '"' + String(v).replace(/"/g, '""') + '"';
 
 const downloadCsv = (rows: Order[]) => {
-  const head = ['ref', 'customer', 'created', 'date', 'slot', 'status', 'total', 'deposit_paid', 'balance_paid'].join(',');
+  const head = ['ref', 'customer', 'created', 'date', 'slot', 'location', 'status', 'total', 'deposit_paid', 'balance_paid'].join(',');
   const lines = rows.map((o) =>
-    [o.ref, customerOf(o).name, o.created, o.date, o.slot, statusDef(o.status).label, o.total ?? '', o.depositPaid, o.balancePaid]
+    [o.ref, customerOf(o).name, o.created, o.date, o.slot, o.location ?? '', statusDef(o.status).label, o.total ?? '', o.depositPaid, o.balancePaid]
       .map(csvCell)
       .join(','),
   );
@@ -103,6 +103,7 @@ export const OrdersView = () => {
                 <td>{customerOf(o).name}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {niceDate(o.date)} · {o.slot}
+                  {o.location && <span className="adm-small" style={{ display: 'block' }}>{o.location}</span>}
                 </td>
                 <td className="adm-muted" style={{ maxWidth: 260 }}>
                   {summaryOf(o)}

@@ -121,7 +121,7 @@ export const CartDrawer = () => {
                       <button
                         type="button"
                         aria-label={`Increase ${l.name}`}
-                        onClick={() => setCart((c) => c.map((x) => (x.key === l.key ? { ...x, qty: x.qty + 1 } : x)))}
+                        onClick={() => setCart((c) => c.map((x) => (x.key === l.key ? { ...x, qty: Math.min(20, x.qty + 1) } : x)))}
                         style={{ width: 36, height: 36, border: 'none', background: 'transparent', cursor: 'pointer', color: '#1E1310' }}
                       >
                         +

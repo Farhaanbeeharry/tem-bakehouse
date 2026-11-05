@@ -113,7 +113,7 @@ export const CalendarView = () => {
             {selOrders.map((o) => (
               <button key={o.ref} type="button" className="adm-row" onClick={() => open(o.ref)}>
                 <span>
-                  <strong>{o.slot}</strong> · {o.ref} · {customerOf(o).name}
+                  <strong>{o.slot}</strong> · {o.ref} · {customerOf(o).name}{o.location ? ' · ' + o.location : ''}
                 </span>
                 <StatusBadge status={o.status} />
               </button>

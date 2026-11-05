@@ -16,6 +16,8 @@ export const ProductCard = ({ p }: { p: Product }) => {
   const needsOptions = p.flavourPick || p.custom || p.fillings || p.boxOf;
   const photo = productPhotoSrc(p.id);
   const hasPhoto = useImageExists(photo);
+  // Cheapest pack, so a box of 4 shows what it actually costs rather than the per-cookie base.
+  const fromPrice = Math.min(...p.packs.map((k) => p.price * k.mult));
 
   return (
     <article style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
@@ -52,15 +54,15 @@ export const ProductCard = ({ p }: { p: Product }) => {
           {fav ? '♥' : '♡'}
         </button>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '6px 12px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, flex: 1 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em', color: '#6E5C4D' }}>{cat?.short.toUpperCase()}</span>
           <button type="button" onClick={open} className="h-card" style={{ all: 'unset', cursor: 'pointer', fontWeight: 800, fontStretch: '108%', textTransform: 'uppercase', letterSpacing: '-0.025em', fontSize: 19.2, lineHeight: 1 }}>
             {p.name}
           </button>
           <span style={{ fontSize: 12, fontWeight: 600, color: p.diet === 'regular' ? '#6E5C4D' : '#3D5226' }}>{dietLabel(p.diet)}</span>
         </div>
-        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>{(p.packs.length > 1 ? 'from ' : '') + fmt(p.price)}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', marginTop: 16 }}>{(p.packs.length > 1 ? 'from ' : '') + fmt(fromPrice)}</span>
       </div>
       {soon ? (
         <div style={{ border: '1px dashed #C7B593', color: '#6E5C4D', borderRadius: 999, padding: '11px 16px', fontSize: 14, textAlign: 'center', minHeight: 44 }}>Not yet available to order</div>
