@@ -17,6 +17,9 @@ export type OrderLine = {
   diet: 'regular' | 'gf';
   unit: number;
   custom?: Custom | null;
+  filling?: string;
+  /** Flavour ids chosen for a Build Your Box line. */
+  box?: string[];
 };
 
 export type LogEntry = { s: StatusId; t: string };
@@ -28,6 +31,7 @@ export type Order = {
   date: string;
   slot: string;
   method: 'collection' | 'delivery';
+  location?: string;
   status: StatusId;
   items: OrderLine[];
   notes: string;
@@ -39,6 +43,8 @@ export type Order = {
   internal: string;
   contactName?: string;
   phone?: string;
+  email?: string;
+  mediaConsent?: boolean;
   proof?: string;
   payRef?: string;
   payMethod?: string;
@@ -70,7 +76,7 @@ export type ProductState = { id: string; status: Availability; featured: boolean
 
 export type StoreState = { orders: Order[]; settings: Settings; products: ProductState[] };
 
-const KEY = 'tem_store_v1';
+const KEY = 'tem_store_v2';
 
 const defaultSettings = (): Settings => ({
   depositPct: 50,

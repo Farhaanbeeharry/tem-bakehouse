@@ -3,7 +3,7 @@ export const site = {
   whatsappNumber: '', // e.g. '2305xxxxxxx' (digits only, country code first)
   instagramHandle: '', // e.g. 'tembakehouse'
   facebookUrl: '',
-  collectionLocation: '',
+  collectionLocation: 'Terre Rouge / Port Louis',
   hours: '',
   email: '',
 };

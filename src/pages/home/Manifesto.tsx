@@ -1,35 +1,37 @@
 import { useRef } from 'react';
 import { useReducedMotion } from '../../lib/shop';
-import { clamp01, sectionProgress, useScrollTick } from '../../lib/scroll';
+import { clamp01, sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
-const WORDS = 'Every TEM cookie starts as a request and ends as a moment. You choose the flavour and the day. It\'s prepared for exactly then.'.split(' ');
-const SERIF = new Set([11, 23]);
-
-const POINTS = [
-  ['01', 'Reviewed personally', 'Every request is read by TEM before anything is charged.'],
-  ['02', 'Prepared for your date', 'You pick the collection day and time.'],
-  ['03', 'Personalised when it matters', 'Messages and occasions on cookie cakes.'],
-];
+const WORDS = 'TEM isn’t just about cookies. It’s about the pause: the lid lifting, the first break, the quiet “mmm” before anyone speaks. It’s the feeling of a moment made a little sweeter, and made to be shared.'.split(' ');
+const SERIF = new Set([8, 17, 35]);
+/** Scroll progress at which the last word is fully lit. */
+const LIT = 1 / 1.35;
 
 export const Manifesto = () => {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const words = useRef<(HTMLSpanElement | null)[]>([]);
+  const coda = useRef<HTMLParagraphElement>(null);
 
   useScrollTick(() => {
     if (!ref.current) return;
     const p = reduced ? 1 : sectionProgress(ref.current);
     const n = WORDS.length;
     words.current.forEach((el, i) => {
-      if (el) el.style.opacity = String(0.14 + 0.86 * clamp01(p * 1.35 * n - i));
+      if (el) el.style.opacity = String(0.14 + 0.86 * clamp01((p / LIT) * n - i));
     });
+    if (coda.current) {
+      const k = reduced ? 1 : seg(p, LIT - 0.02, LIT + 0.1);
+      coda.current.style.opacity = String(k);
+      coda.current.style.transform = `translateY(${((1 - k) * 24).toFixed(1)}px)`;
+    }
   }, [reduced]);
 
   return (
-    <section ref={ref} data-dark="1" aria-label="The TEM experience" style={{ position: 'relative', height: reduced ? 'auto' : '230vh', background: '#711D2C', color: '#F0EED9' }}>
-      <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 36, padding: 'clamp(80px,10vh,120px) clamp(16px,5vw,72px)' }}>
+    <section ref={ref} data-dark="1" aria-label="The TEM experience" style={{ position: 'relative', height: reduced ? 'auto' : '260vh', background: '#711D2C', color: '#F0EED9' }}>
+      <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(24px,4vh,40px)', padding: 'clamp(80px,10vh,120px) clamp(16px,5vw,72px)' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.26em', color: '#E5DCC5' }}>THE TEM EXPERIENCE</div>
-        <p style={{ margin: 0, maxWidth: '20ch', fontWeight: 800, fontStretch: '108%', fontSize: 'clamp(34px,5.6vw,98px)', lineHeight: 0.98, letterSpacing: '-0.03em', textWrap: 'balance' }}>
+        <p style={{ margin: 0, maxWidth: '24ch', fontWeight: 800, fontStretch: '108%', fontSize: 'clamp(28px,min(4.6vw,7.4vh),80px)', lineHeight: 1.02, letterSpacing: '-0.03em', textWrap: 'balance' }}>
           {WORDS.map((w, i) => (
             <span
               key={i}
@@ -42,15 +44,9 @@ export const Manifesto = () => {
             </span>
           ))}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,220px),1fr))', gap: 12, maxWidth: 980 }}>
-          {POINTS.map(([n, t, d]) => (
-            <div key={n} style={{ padding: '18px 20px', borderTop: '1px solid rgba(240,238,217,.3)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.2em', color: '#E5DCC5' }}>{n}</span>
-              <strong style={{ fontSize: 16 }}>{t}</strong>
-              <span style={{ fontSize: 14, color: '#E5DCC5' }}>{d}</span>
-            </div>
-          ))}
-        </div>
+        <p ref={coda} style={{ margin: 0, opacity: 0, fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(24px,min(3vw,5vh),48px)', lineHeight: 1.1, color: '#F1C9C9', willChange: 'opacity,transform' }}>
+          The feeling of a moment worth slowing down for.
+        </p>
       </div>
     </section>
   );

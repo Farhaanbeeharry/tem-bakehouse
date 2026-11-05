@@ -47,7 +47,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
   ];
   const banner =
     o.status === 'ready'
-      ? (['Ready when you are.', `Collect at ${o.slot} on ${niceDate(o.date)}. Please bring the remaining balance. Location: shared by TEM.`, '#E2EAD6', '#3D5226'] as const)
+      ? (['Ready when you are.', `Collect at ${o.slot} on ${niceDate(o.date)}. Please bring the remaining balance. Location: ${o.location ?? 'shared by TEM Bakehouse'}.`, '#E2EAD6', '#3D5226'] as const)
       : o.status === 'payment_failed' && o.failNote
         ? (['Deposit not verified.', o.failNote, '#F3DCD8', '#8A2320'] as const)
         : BANNERS[o.status];
@@ -101,7 +101,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
             {S.label}
           </h2>
           <span style={{ fontSize: 15, color: '#6E5C4D' }}>
-            Collection · {niceDate(o.date)} · {o.slot}
+            Collection{o.location ? ' · ' + o.location : ''} · {niceDate(o.date)} · {o.slot}
           </span>
         </div>
         <StatusBadge status={o.status} large />

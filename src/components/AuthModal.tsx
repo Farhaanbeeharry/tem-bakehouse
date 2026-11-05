@@ -12,7 +12,7 @@ const TITLES: Record<AuthMode, [string, string]> = {
 };
 
 export const AuthModal = () => {
-  const { auth: mode, authPending, openAuth, closeAuth, setUser, showToast, cart, setVerifyBanner } = useShop();
+  const { auth: mode, authPending, openAuth, closeAuth, setUser, setGuest, showToast, cart, setVerifyBanner } = useShop();
   const mobile = useIsMobile();
   const navigate = useNavigate();
   const [f, setF] = useState({ name: '', email: '', pw: '' });
@@ -51,6 +51,13 @@ export const AuthModal = () => {
 
   const [title, cta] = TITLES[mode];
 
+  const asGuest = () => {
+    setGuest(true);
+    setErr('');
+    closeAuth();
+    navigate('/checkout');
+  };
+
   return (
     <>
       <div onClick={closeAuth} style={{ position: 'fixed', inset: 0, background: 'rgba(34,22,15,0.55)', zIndex: 90, animation: 'temFade .3s ease both' }} />
@@ -88,7 +95,7 @@ export const AuthModal = () => {
               </strong>
               <span style={{ fontSize: 14, color: '#E5DCC5' }}>
                 {authPending
-                  ? 'Sign in or create an account to submit. Your selections stay exactly as they are.'
+                  ? 'Sign in, create an account, or sign in as a guest. Your selections stay exactly as they are.'
                   : 'Track requests, deposits and collections from your account.'}
               </span>
             </div>
@@ -156,6 +163,18 @@ export const AuthModal = () => {
           <button type="submit" className="btn btn-primary" style={{ minHeight: 52 }}>
             {cta}
           </button>
+          {authPending && (mode === 'login' || mode === 'register') && (
+            <>
+              <div aria-hidden="true" style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#8A7A6A' }}>
+                <span style={{ flex: 1, height: 1, background: '#D9CDB4' }} />
+                or
+                <span style={{ flex: 1, height: 1, background: '#D9CDB4' }} />
+              </div>
+              <button type="button" className="btn btn-outline" style={{ minHeight: 52 }} onClick={asGuest}>
+                Sign in as Guest
+              </button>
+            </>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', fontSize: 13 }}>
             <button type="button" className="link-btn" style={{ color: '#711D2C' }} onClick={() => go(mode === 'login' ? 'forgot' : 'login')}>
               {mode === 'login' ? 'Forgot password?' : mode === 'register' ? 'Already have an account?' : 'Back to sign in'}

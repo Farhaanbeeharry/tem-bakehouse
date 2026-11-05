@@ -6,41 +6,28 @@ import { sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
 const CAPTIONS = [
   { k: '02 / THE BREAK', text: 'Break it open.', a: 0.3, b: 0.5, side: 'left' as const, top: '16%' },
-  { k: '03 / INSIDE', text: 'Share it.', a: 0.5, b: 0.68, side: 'right' as const, top: '62%' },
-  { k: '03 / INSIDE', text: 'Keep it.', a: 0.68, b: 0.84, side: 'left' as const, top: '64%' },
+  { k: '03 / SHARE', text: 'Share it.', a: 0.5, b: 0.68, side: 'right' as const, top: '62%' },
+  { k: '04 / SAVOUR', text: 'Savour it.', a: 0.68, b: 0.84, side: 'left' as const, top: '64%' },
 ];
-const RAIL = ['01 SURFACE', '02 THE BREAK', '03 INSIDE', '04 TEM'];
-const RAIL_RANGES = [0, 0.3, 0.62, 0.86, 1.01];
+const RAIL = ['01 SURFACE', '02 THE BREAK', '03 SHARE', '04 SAVOUR', '05 TEM'];
+const RAIL_RANGES = [0, 0.3, 0.5, 0.68, 0.86, 1.01];
 
 type Seq = { N: number; imgs: (HTMLImageElement | undefined)[]; ok: boolean };
 
-// Scroll position (0–1) → animation position (0–1). Flat-ish stretches hold the scene still while
-// the title, each caption and the closing logo are fully on screen, so continuous scrolling can't skip them.
-const KNOTS: [number, number][] = [
-  [0, 0],
-  [0.06, 0.015],
-  [0.2, 0.36],
-  [0.29, 0.44],
-  [0.37, 0.555],
-  [0.46, 0.625],
-  [0.54, 0.73],
-  [0.63, 0.79],
-  [0.78, 0.94],
-  [1, 1],
-];
+/**
+ * The hero plays as steps, not as a scrub: the title, each caption and the closing logo.
+ * One scroll gesture (wheel, swipe or key) plays the frames to the next step.
+ * Values are animation positions (0–1) where that step's text is fully on screen.
+ */
+const STEPS = [0, 0.4, 0.59, 0.76, 1];
+const LAST = STEPS.length - 1;
+const STEP_MS = 1150;
+/** Scroll distance per step while the hero is pinned, in viewport heights. */
+const STEP_VH = 0.6;
 
-const remap = (raw: number) => {
-  for (let i = 1; i < KNOTS.length; i++) {
-    const [x1, y1] = KNOTS[i];
-    if (raw <= x1) {
-      const [x0, y0] = KNOTS[i - 1];
-      const t = (raw - x0) / (x1 - x0);
-      const s = t * t * (3 - 2 * t);
-      return y0 + (y1 - y0) * s;
-    }
-  }
-  return 1;
-};
+const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName));
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -49,9 +36,9 @@ export const Hero = () => {
   const rootRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<SVGSVGElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<SVGSVGElement>(null);
   const capRefs = useRef<(HTMLDivElement | null)[]>([]);
   const railRefs = useRef<(HTMLLIElement | null)[]>([]);
   const seq = useRef<Seq | null>(null);
@@ -126,7 +113,7 @@ export const Hero = () => {
     c.style.opacity = '1';
   };
 
-  const anim = useRef({ cur: -1, target: 0, raf: 0 });
+  const ctl = useRef({ step: 0, p: 0, busy: false, raf: 0, synced: false, lockUntil: 0, lastWheel: 0, lastAbs: 0, touchY: 0 });
 
   const apply = (p: number) => {
     const tk = seg(p, 0.03, 0.15);
@@ -154,29 +141,127 @@ export const Hero = () => {
     draw(p);
   };
 
-  useEffect(() => {
-    const a = anim.current;
-    return () => cancelAnimationFrame(a.raf);
-  }, []);
+  const pin = () => {
+    const root = rootRef.current!;
+    const top = root.getBoundingClientRect().top + window.scrollY;
+    return { top, len: Math.max(1, root.offsetHeight - window.innerHeight) };
+  };
+  const inHero = () => {
+    if (!rootRef.current) return false;
+    const { top, len } = pin();
+    return window.scrollY >= top - 2 && window.scrollY <= top + len + 2;
+  };
 
+  /** Plays the sequence to step k, and moves the scroll position with it so the page stays in sync. */
+  const goTo = (k: number, moveScroll = true) => {
+    const c = ctl.current;
+    k = Math.max(0, Math.min(LAST, k));
+    const from = c.p, to = STEPS[k];
+    const { top, len } = pin();
+    const sFrom = window.scrollY, sTo = top + (k / LAST) * len;
+    const dur = reduced ? 0 : STEP_MS * Math.min(1.5, Math.max(0.75, Math.abs(to - from) / 0.2));
+    const t0 = performance.now();
+    c.step = k;
+    c.busy = true;
+    c.lockUntil = t0 + dur;
+    cancelAnimationFrame(c.raf);
+    const frame = (now: number) => {
+      const t = dur ? Math.min(1, (now - t0) / dur) : 1, e = ease(t);
+      c.p = from + (to - from) * e;
+      if (moveScroll) window.scrollTo(0, sFrom + (sTo - sFrom) * e);
+      apply(c.p);
+      if (t < 1) c.raf = requestAnimationFrame(frame);
+      else {
+        c.busy = false;
+        c.raf = 0;
+      }
+    };
+    c.raf = requestAnimationFrame(frame);
+  };
+  const goToRef = useRef(goTo);
+  goToRef.current = goTo;
+
+  useEffect(() => {
+    if (reduced) return;
+    const c = ctl.current;
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || !inHero()) return;
+      const dir = Math.sign(e.deltaY);
+      if (!dir) return;
+      const now = performance.now(), abs = Math.abs(e.deltaY);
+      // A new gesture starts after a pause or with a clear jump in speed; anything else is momentum from the last one.
+      const fresh = now - c.lastWheel > 180 || abs > c.lastAbs * 1.6 + 4;
+      c.lastWheel = now;
+      c.lastAbs = abs;
+      const next = c.step + dir;
+      if (c.busy || now < c.lockUntil || !fresh) {
+        e.preventDefault();
+        return;
+      }
+      if (next < 0 || next > LAST) return; // past the last step: scroll on into the page
+      e.preventDefault();
+      goToRef.current(next);
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      c.touchY = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!inHero()) return;
+      const dir = Math.sign(c.touchY - e.touches[0].clientY);
+      const next = c.step + dir;
+      if (c.busy || (dir && next >= 0 && next <= LAST)) e.preventDefault();
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!inHero() || c.busy) return;
+      const dy = c.touchY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 30) return;
+      const next = c.step + Math.sign(dy);
+      if (next >= 0 && next <= LAST) goToRef.current(next);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (typing(e.target) || e.altKey || e.ctrlKey || e.metaKey || !inHero()) return;
+      const dir = ['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.shiftKey) ? 1 : ['ArrowUp', 'PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey) ? -1 : 0;
+      const next = c.step + dir;
+      if (!dir || next < 0 || next > LAST) return;
+      e.preventDefault();
+      if (!c.busy) goToRef.current(next);
+    };
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      cancelAnimationFrame(c.raf);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [reduced]);
+
+  // Keeps the step in sync with scrolling we didn't drive (scrollbar, links, restored position), and redraws as frames arrive.
   useScrollTick(() => {
     const root = rootRef.current;
     if (!root) return;
-    const a = anim.current;
-    a.target = reduced ? 0 : remap(sectionProgress(root));
-    if (a.cur < 0 || reduced) {
-      a.cur = a.target;
-      apply(a.cur);
+    const c = ctl.current;
+    if (reduced) {
+      c.p = 0;
+      apply(0);
       return;
     }
-    const step = () => {
-      const d = a.target - a.cur;
-      a.cur = Math.abs(d) < 0.0004 ? a.target : a.cur + d * 0.14;
-      apply(a.cur);
-      a.raf = a.cur === a.target ? 0 : requestAnimationFrame(step);
-    };
-    if (!a.raf) a.raf = requestAnimationFrame(step);
-    else apply(a.cur);
+    if (c.busy) return;
+    const k = Math.round(sectionProgress(root) * LAST);
+    if (!c.synced) {
+      c.synced = true;
+      c.step = k;
+      c.p = STEPS[k];
+    } else if (k !== c.step) {
+      goTo(k, false);
+      return;
+    }
+    apply(c.p);
   }, [ready, tick, reduced, mobile]);
 
   const scrollToFlavours = () => {
@@ -189,16 +274,24 @@ export const Hero = () => {
       ref={rootRef}
       data-dark="1"
       aria-label="TEM Bakehouse — Made for the Moment"
-      style={{ position: 'relative', height: reduced ? '100vh' : mobile ? '620vh' : '760vh', background: '#3A0B14' }}
+      style={{ position: 'relative', height: reduced ? '100vh' : `${100 + LAST * STEP_VH * 100}vh`, background: '#3A0B14' }}
     >
       <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: 'radial-gradient(ellipse 80% 70% at 50% 46%,#8C2A3A 0%,#711D2C 44%,#3A0B14 100%)', color: '#F0EED9' }}>
         <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', opacity: 0, transition: 'opacity .6s' }} />
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg,rgba(30,6,12,.35) 0%,rgba(30,6,12,0) 22%,rgba(30,6,12,0) 55%,rgba(30,6,12,.55) 100%)' }} />
-        <svg ref={logoRef} viewBox="465 829 1119 392" fill="#F0EED9" aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '46%', width: 'min(56vw,720px)', height: 'auto', transform: 'translate(-50%,-50%)', opacity: 0, zIndex: 2, pointerEvents: 'none' }}>
-          <polygon points="465,829 794,829 794,909 675,909 675,1221 585,1221 585,909 465,909" />
-          <polygon points="852,829 1122,829 1122,909 942,909 942,985 1097,985 1097,1058 942,1058 942,1141 1127,1141 1127,1221 852,1221" />
-          <polygon points="1185,829 1283,829 1384,1031 1485,829 1584,829 1584,1221 1494,1221 1494,994 1412,1154 1356,1154 1276,994 1276,1221 1185,1221" />
-        </svg>
+        <div ref={logoRef} aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '48%', width: 'min(56vw,720px)', transform: 'translate(-50%,-50%)', opacity: 0, zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 'min(2.2vw,28px)' }}>
+          <svg viewBox="465 829 1119 392" fill="#F0EED9" style={{ display: 'block', width: '100%', height: 'auto' }}>
+            <polygon points="465,829 794,829 794,909 675,909 675,1221 585,1221 585,909 465,909" />
+            <polygon points="852,829 1122,829 1122,909 942,909 942,985 1097,985 1097,1058 942,1058 942,1141 1127,1141 1127,1221 852,1221" />
+            <polygon points="1185,829 1283,829 1384,1031 1485,829 1584,829 1584,1221 1494,1221 1494,994 1412,1154 1356,1154 1276,994 1276,1221 1185,1221" />
+          </svg>
+          {/* Stretched to exactly the width of the TEM wordmark above it. */}
+          <svg ref={endRef} viewBox="0 0 1119 150" style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible', opacity: 0 }}>
+            <text x="0" y="118" textLength="1119" lengthAdjust="spacingAndGlyphs" fill="#F0EED9" style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 150 }}>
+              Made for the Moment.
+            </text>
+          </svg>
+        </div>
         <div
           aria-hidden="true"
           style={{
@@ -224,10 +317,12 @@ export const Hero = () => {
             <span style={{ width: 40, height: 1, background: '#C7B593' }} />
             <span>MAURITIUS</span>
           </div>
-          <h1 className="display" style={{ fontWeight: 900, fontStretch: '118%', fontSize: 'clamp(52px,10.4vw,188px)', lineHeight: 0.82, textShadow: '0 10px 50px rgba(30,6,12,.45)' }}>
-            Made for
+          <h1 className="display" style={{ fontWeight: 900, fontStretch: '118%', fontSize: 'clamp(44px,min(8.4vw,13vh),150px)', lineHeight: 0.86, textShadow: '0 10px 50px rgba(30,6,12,.45)' }}>
+            Break it open.
             <br />
-            the <em>moment.</em>
+            Share it.
+            <br />
+            <em>Savour it.</em>
           </h1>
         </div>
 
@@ -255,10 +350,6 @@ export const Hero = () => {
             </div>
           </div>
         ))}
-
-        <div ref={endRef} style={{ position: 'absolute', left: 0, right: 0, bottom: 'clamp(110px,18vh,190px)', textAlign: 'center', zIndex: 4, opacity: 0, fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(26px,3.2vw,46px)', color: '#F0EED9', pointerEvents: 'none' }}>
-          Made for the Moment.
-        </div>
 
         {!mobile && (
           <ol aria-hidden="true" style={{ position: 'absolute', right: 'clamp(16px,3vw,40px)', top: '50%', transform: 'translateY(-50%)', listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 14, zIndex: 5, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.2em', color: '#F0EED9', textAlign: 'right' }}>

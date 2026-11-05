@@ -4,7 +4,6 @@ import { ImageSlot } from '../../components/ImageSlot';
 import { Cookie } from '../../components/Cookie';
 import { Logo } from '../../components/Logo';
 import { asset } from '../../lib/assets';
-import { instagramLabel, instagramUrl } from '../../data/site';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { clamp01, sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
@@ -13,6 +12,7 @@ const MOMENTS = [
   { id: 'gift', title: 'Gifts', text: 'A box of six says thank you.', to: '/cookies?cat=round', flavour: 'ferrero' },
   { id: 'gathering', title: 'Gatherings', text: 'Mini cookies and shots for the table.', to: '/cookies?cat=mini', flavour: 'pistachio' },
   { id: 'treat', title: 'Just because', text: 'One cookie, on an ordinary Tuesday.', to: '/cookies', flavour: 'choco-chips' },
+  { id: 'yours', title: 'Your moment', text: 'Something personal in mind? Tell us and we’ll make it.', to: '/contact', flavour: '' },
 ];
 
 export const Moments = () => {
@@ -40,11 +40,8 @@ export const Moments = () => {
               <em style={{ color: '#711D2C' }}>moment?</em>
             </h2>
           </div>
-          <p className="lede" style={{ fontSize: 14 }}>
-            Ideas for using the menu. These are not fixed packages.
-          </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,240px),1fr))', gap: 18, perspective: 1200 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,210px),1fr))', gap: 18, perspective: 1200 }}>
           {MOMENTS.map((m) => (
             <button
               key={m.id}
@@ -54,19 +51,28 @@ export const Moments = () => {
               onMouseLeave={(e) => tilt(e, false)}
               style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, transformStyle: 'preserve-3d', transition: 'transform .5s var(--ease)' }}
             >
-              <ImageSlot
-                src={asset.moment(m.id)}
-                alt={m.title}
-                fallback={
-                  <div style={{ width: '56%' }}>
-                    <Cookie flavour={m.flavour} />
-                  </div>
-                }
-              >
-                <span style={{ position: 'absolute', left: 16, bottom: 26, fontWeight: 900, fontStretch: '120%', fontSize: 64, lineHeight: 0.8, color: '#711D2C', transform: 'translateZ(40px)', textShadow: '0 2px 12px rgba(240,238,217,.5)' }}>
-                  {m.title[0]}
-                </span>
-              </ImageSlot>
+              {m.flavour ? (
+                <ImageSlot
+                  src={asset.moment(m.id)}
+                  alt={m.title}
+                  fallback={
+                    <div style={{ width: '56%' }}>
+                      <Cookie flavour={m.flavour} />
+                    </div>
+                  }
+                >
+                  <span style={{ position: 'absolute', left: 16, bottom: 26, fontWeight: 900, fontStretch: '120%', fontSize: 64, lineHeight: 0.8, color: '#711D2C', transform: 'translateZ(40px)', textShadow: '0 2px 12px rgba(240,238,217,.5)' }}>
+                    {m.title[0]}
+                  </span>
+                </ImageSlot>
+              ) : (
+                <div style={{ position: 'relative', aspectRatio: '4 / 5', borderRadius: 22, overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 40%,#8C2A3A 0%,#711D2C 50%,#3A0B14 100%)', display: 'grid', placeItems: 'center' }}>
+                  <span aria-hidden="true" style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(120px,14vw,200px)', lineHeight: 1, color: '#F0EED9', transform: 'translateZ(40px)' }}>
+                    ?
+                  </span>
+                  <span style={{ position: 'absolute', left: 16, right: 16, bottom: 18, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.18em', color: '#F1C9C9' }}>PERSONALISED · ON REQUEST</span>
+                </div>
+              )}
               <span style={{ fontWeight: 800, fontStretch: '110%', fontSize: 26, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{m.title}</span>
               <span style={{ fontSize: 14, color: '#6E5C4D' }}>{m.text}</span>
             </button>
@@ -86,7 +92,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
       ['1/1', asset.category('round'), 'A stack of TEM round cookies'],
       ['4/5', asset.moment('treat'), 'A cookie and a coffee by the window'],
       ['1/1', asset.heroFrame('desktop', 96), 'Cookie breaking apart'],
-      ['3/4', asset.category('cups'), 'Cookie cups filled with ganache'],
+      ['3/4', asset.category('cups'), 'Cookie cups with Nutella, pistachio cream, cream cheese and Biscoff spread'],
     ],
   },
   {
@@ -113,7 +119,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
   },
 ];
 
-export const InstaStrip = () => {
+export const GalleryStrip = () => {
   const reduced = useReducedMotion();
   const cols = useRef<(HTMLDivElement | null)[]>([]);
   useScrollTick(() => {
@@ -130,21 +136,18 @@ export const InstaStrip = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 48 }}>
           <div>
             <div className="eyebrow" style={{ color: '#C7B593' }}>
-              05 — From the bakehouse
+              05 — Gallery
             </div>
             <h2 className="display" style={{ fontSize: 'clamp(40px,6vw,96px)' }}>
-              Fresh on
+              Fresh from
               <br />
-              <em style={{ color: '#E5DCC5' }}>Instagram.</em>
+              <em style={{ color: '#E5DCC5' }}>the bakehouse.</em>
             </h2>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Link to="/gallery" className="btn" style={{ border: '1px solid #F0EED9', color: '#F0EED9', fontWeight: 600, fontSize: 14 }}>
               Open gallery
             </Link>
-            <a href={instagramUrl()} target="_blank" rel="noopener" className="btn btn-primary" style={{ fontSize: 14 }}>
-              {instagramLabel()}
-            </a>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 'clamp(8px,1.4vw,18px)', height: 'clamp(420px,70vw,820px)', overflow: 'hidden' }}>
@@ -203,10 +206,10 @@ export const FinalCta = () => {
           <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(28px,3.4vw,50px)', lineHeight: 1 }}>Your moment starts here.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button type="button" className="btn btn-cream" style={{ padding: '18px 34px', minHeight: 54, fontSize: 16 }} onClick={() => navigate('/cookies')}>
-              Start an order request
+              Start your order
             </button>
             <button type="button" className="btn btn-ghost-light" style={{ padding: '18px 28px', minHeight: 54, fontSize: 16 }} onClick={() => navigate('/how-to-order')}>
-              How ordering works
+              How to order
             </button>
           </div>
         </div>

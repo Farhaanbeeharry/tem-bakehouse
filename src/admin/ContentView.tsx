@@ -15,7 +15,7 @@ export const ContentView = () => {
     ['Social links', 'Instagram, Facebook, WhatsApp.', 'Not set'],
     ['Contact details', 'Email, WhatsApp, collection location, hours.', 'Not set'],
     ['Order Policy', 'Shown at checkout and in the footer. PDF upload supported.', 'Awaiting client text'],
-    ['Business Policy', 'Shown at checkout and in the footer. PDF upload supported.', 'Awaiting client text'],
+    ['Photo & Media Policy', 'Shown at checkout and in the footer. PDF upload supported.', 'Awaiting client text'],
     ['Seasonal collection', 'Optional limited-edition section on the homepage.', 'Off'],
   ];
 

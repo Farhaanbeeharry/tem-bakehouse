@@ -4,6 +4,7 @@ import { pushStatus, updateOrder, useStore, type Order, type OrderLine } from '.
 import { fmt, niceDate } from '../lib/format';
 import { customerOf, estimate, isLive, statusDef } from './adminData';
 import { OrderActions } from './OrderActions';
+import { lineMeta } from '../components/CartDrawer';
 import { StatusBadge } from './StatusBadge';
 
 type Props = { order: Order; onClose: () => void };
@@ -80,7 +81,7 @@ export const OrderDrawer = ({ order: o, onClose }: Props) => {
             </div>
             <div className="adm-tile">
               <span style={{ fontSize: 11 }} className="adm-muted">
-                {o.method === 'delivery' ? 'Delivery' : 'Collection'}
+                {o.method === 'delivery' ? 'Delivery' : 'Collection' + (o.location ? ' · ' + o.location : '')}
               </span>
               <br />
               <strong>{niceDate(o.date)}</strong>
@@ -103,7 +104,7 @@ export const OrderDrawer = ({ order: o, onClose }: Props) => {
                     </strong>
                     <br />
                     <span className="adm-small">
-                      {l.pack} · {l.diet === 'gf' ? 'Gluten-free' : 'Regular'}
+                      {lineMeta(l)}
                     </span>
                     {ct && (
                       <>

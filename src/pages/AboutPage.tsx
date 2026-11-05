@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ImageSlot } from '../components/ImageSlot';
 import { asset } from '../lib/assets';
 
-const VALUES = [1, 2, 3];
+const VALUES = [1, 2, 3, 4, 5];
 
 export const AboutPage = () => (
   <main>
@@ -45,12 +45,14 @@ export const AboutPage = () => (
       <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 22, alignItems: 'center' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.24em', color: '#C7B593' }}>THE MEANING</span>
         <h2 className="display" style={{ fontSize: 'clamp(36px,5.8vw,90px)' }}>
-          <em>Made for</em>
-          <br />
-          the Moment.
+          <em>
+            Made for
+            <br />
+            the Moment.
+          </em>
         </h2>
         <p style={{ margin: 0, maxWidth: '52ch', fontSize: 18, lineHeight: 1.6, color: '#E5DCC5' }}>
-          Every TEM order is prepared for a particular day — a celebration, a thank-you, or simply a good afternoon.
+          Every bake is made fresh for your occasion. We help create the moments your cookies are shared in, so they become part of the memory, not just the treat.
         </p>
       </div>
     </section>
@@ -59,7 +61,7 @@ export const AboutPage = () => (
         <h2 className="h-page" style={{ marginBottom: 28, fontSize: 'clamp(25.6px,3.2vw,46px)' }}>
           What TEM values
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,260px),1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,210px),1fr))', gap: 14 }}>
           {VALUES.map((n) => (
             <div key={n} style={{ padding: 24, border: '1.5px dashed #C7B593', borderRadius: 20, minHeight: 180, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <span className="placeholder-tag">VALUE 0{n} · TO BE SUPPLIED</span>

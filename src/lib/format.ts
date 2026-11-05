@@ -12,6 +12,6 @@ export const toIso = (d: Date) =>
 export const niceDate = (iso: string) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
-export const dietLabel = (d: string) => (d === 'both' ? 'Regular · Gluten-free' : d === 'gf' ? 'Gluten-free' : 'Regular');
+export const dietLabel = (d: string) => (d === 'both' ? 'Gluten-free available' : d === 'gf' ? 'Gluten-free' : 'Regular only');
 
 export const uid = () => Math.random().toString(36).slice(2, 9);

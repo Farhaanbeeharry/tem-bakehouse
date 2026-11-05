@@ -24,8 +24,8 @@ export const Footer = ({ extraBottom }: { extraBottom: boolean }) => (
         <Link to="/policies/order" style={linkStyle}>
           Order Policy
         </Link>
-        <Link to="/policies/business" style={linkStyle}>
-          Business Policy
+        <Link to="/policies/media" style={linkStyle}>
+          Photo &amp; Media Policy
         </Link>
         <a href={instagramUrl()} target="_blank" rel="noopener" style={linkStyle}>
           Instagram

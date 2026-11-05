@@ -7,46 +7,7 @@ import { asset } from '../../lib/assets';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { sectionProgress, useScrollTick } from '../../lib/scroll';
 
-const CAT_FLAVOUR: Record<string, string> = { round: 'choco-chips', mini: 'pistachio', cups: 'double-choco', cakes: 'red-velvet', sticks: 'plain', shots: 'ferrero' };
-
-export const Marquee = () => {
-  const rows = useRef<(HTMLDivElement | null)[]>([]);
-  useScrollTick(() => {
-    rows.current.forEach((el, i) => {
-      if (!el?.parentElement) return;
-      const r = el.parentElement.getBoundingClientRect();
-      const speed = i === 0 ? 0.55 : -0.45;
-      el.style.transform = `translate3d(calc(-20% + ${((r.top - window.innerHeight) * speed).toFixed(1)}px),0,0)`;
-    });
-  });
-  const a = ['Choco Chips', 'Double Choco', 'Red Velvet', 'Pistachio', 'Bueno', 'Ferrero'];
-  const b = ['Plain', 'Pinky Cookie', 'Nutty Crunch', 'Biscoff — soon', 'Salted Caramel — soon'];
-  const big = { display: 'flex', gap: '.4em', whiteSpace: 'nowrap', fontWeight: 900, fontStretch: '122%', fontSize: 'clamp(56px,10vw,180px)', lineHeight: 0.9, letterSpacing: '-0.04em', textTransform: 'uppercase', willChange: 'transform' } as const;
-  return (
-    <section data-dark="1" aria-hidden="true" style={{ background: '#1E1310', color: '#F0EED9', overflow: 'hidden', padding: 'clamp(40px,6vw,80px) 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ overflow: 'hidden' }}>
-        <div ref={(el) => { rows.current[0] = el; }} style={big}>
-          {[...a, ...a].map((w, i) => (
-            <span key={i} style={{ display: 'flex', gap: '.4em' }}>
-              <span>{w}</span>
-              <span style={{ color: '#711D2C' }}>●</span>
-            </span>
-          ))}
-        </div>
-      </div>
-      <div style={{ overflow: 'hidden' }}>
-        <div ref={(el) => { rows.current[1] = el; }} style={{ ...big, color: 'transparent', WebkitTextStroke: '1.5px #C7B593' }}>
-          {[...b, ...b].map((w, i) => (
-            <span key={i} style={{ display: 'flex', gap: '.4em' }}>
-              <span>{w}</span>
-              <span>·</span>
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
+const CAT_FLAVOUR: Record<string, string> = { round: 'choco-chips', box: 'pinky', mini: 'pistachio', cups: 'double-choco', cakes: 'red-velvet', sticks: 'plain', shots: 'ferrero' };
 
 export const Collection = () => {
   const navigate = useNavigate();
@@ -82,15 +43,15 @@ export const Collection = () => {
   const cardW = mobile ? 'min(78vw, 380px)' : 'max(220px, min(clamp(260px,30vw,440px), calc((100vh - 450px) * 0.75)))';
 
   return (
-    <section ref={ref} aria-label="Explore our collection" style={{ position: 'relative', height: flat ? 'auto' : '420vh', background: '#F0EED9' }}>
+    <section ref={ref} aria-label="Our Collection" style={{ position: 'relative', height: flat ? 'auto' : '420vh', background: '#F0EED9' }}>
       <div style={{ position: flat ? 'relative' : 'sticky', top: 0, height: flat ? 'auto' : '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(16px,3.5vh,40px)', padding: flat ? '96px 0' : '88px 0 16px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 20, flexWrap: 'wrap', padding: '0 var(--gutter)' }}>
           <div>
-            <div className="eyebrow">02 — Explore our collection</div>
+            <div className="eyebrow">02 — Our Collection</div>
             <h2 className="display" style={{ fontSize: flat ? 'clamp(40px,6vw,96px)' : 'clamp(36px,min(6vw,8vh),96px)' }}>
-              Six shapes
+              Our
               <br />
-              of <em style={{ color: '#711D2C' }}>TEM.</em>
+              <em style={{ color: '#711D2C' }}>Collection.</em>
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.18em', color: '#6E5C4D' }}>

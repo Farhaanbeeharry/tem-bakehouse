@@ -6,7 +6,7 @@ import { uid } from './format';
 export type User = { name: string; email: string; phone: string };
 export type AuthMode = 'login' | 'register' | 'forgot' | 'sent' | 'reset';
 
-type AddOptions = { pack?: string; qty?: number; diet?: 'regular' | 'gf'; flavour?: string; custom?: Custom | null };
+type AddOptions = { pack?: string; qty?: number; diet?: 'regular' | 'gf'; flavour?: string; custom?: Custom | null; filling?: string; box?: string[] };
 
 type ShopContextValue = {
   cart: OrderLine[];
@@ -16,6 +16,9 @@ type ShopContextValue = {
   estimate: number;
   user: User | null;
   setUser: (u: User | null) => void;
+  /** Checking out without an account. */
+  guest: boolean;
+  setGuest: (v: boolean) => void;
   favs: string[];
   toggleFav: (id: string) => void;
   drawerOpen: boolean;
@@ -52,6 +55,7 @@ const save = (key: string, value: unknown) => {
 export const ShopProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCartState] = useState<OrderLine[]>(() => load('tem_cart', []));
   const [user, setUser] = useState<User | null>(() => load('tem_user', null));
+  const [guest, setGuest] = useState(false);
   const [favs, setFavs] = useState<string[]>(() => load('tem_favs', []));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [auth, setAuth] = useState<AuthMode | null>(null);
@@ -74,6 +78,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       key: uid(),
       pid: p.id,
       name: p.name + (p.flavourPick ? ' — ' + flavourById[fl].name : ''),
+      ...(o.filling ? { filling: o.filling } : null),
+      ...(o.box ? { box: o.box } : null),
       flavour: fl,
       pack: pk.label,
       packId: pk.id,
@@ -100,6 +106,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       estimate: cart.reduce((a, l) => a + l.unit * l.qty, 0),
       user,
       setUser,
+      guest,
+      setGuest,
       favs,
       toggleFav: (id) => setFavs((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id])),
       drawerOpen,
@@ -116,7 +124,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       verifyBanner,
       setVerifyBanner,
     }),
-    [cart, setCart, addLine, user, favs, drawerOpen, auth, authPending, toast, showToast, verifyBanner],
+    [cart, setCart, addLine, user, guest, favs, drawerOpen, auth, authPending, toast, showToast, verifyBanner],
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

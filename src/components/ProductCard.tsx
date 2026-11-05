@@ -13,7 +13,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
   const fav = favs.includes(p.id);
   const cat = categories.find((c) => c.id === p.cat);
   const open = () => navigate('/cookies/' + p.id);
-  const needsOptions = p.flavourPick || p.custom;
+  const needsOptions = p.flavourPick || p.custom || p.fillings || p.boxOf;
   const photo = productPhotoSrc(p.id);
   const hasPhoto = useImageExists(photo);
 
@@ -29,6 +29,11 @@ export const ProductCard = ({ p }: { p: Product }) => {
         ) : (
           <div style={{ width: '80%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
             <Cookie flavour={p.flavour} />
+          </div>
+        )}
+        {!soon && p.diet !== 'regular' && (
+          <div style={{ position: 'absolute', left: 14, top: 14, background: '#3D5226', color: '#F0EED9', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em', padding: '7px 10px', borderRadius: 999 }}>
+            {p.diet === 'gf' ? 'GLUTEN-FREE' : 'GF AVAILABLE'}
           </div>
         )}
         {soon && (
@@ -70,7 +75,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
             showToast(p.name + ' added to your order request');
           }}
         >
-          {needsOptions ? 'Choose options' : 'Quick add · single'}
+          {p.boxOf ? 'Build your box' : needsOptions ? 'Choose options' : 'Quick add · single'}
         </button>
       )}
     </article>

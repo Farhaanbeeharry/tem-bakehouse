@@ -21,7 +21,9 @@ export const ContactPage = () => {
     <main className="page page-narrow" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,400px),1fr))', gap: 'clamp(28px,5vw,72px)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
         <h1 className="h-page">Say hello.</h1>
-        <p style={{ margin: 0, fontSize: 17, lineHeight: 1.6, color: '#6E5C4D', maxWidth: '40ch' }}>Questions about flavours, allergies or a special occasion? Message TEM directly.</p>
+        <p style={{ margin: 0, fontSize: 17, lineHeight: 1.6, color: '#6E5C4D', maxWidth: '40ch' }}>
+          Have a question about flavours, allergies or a special occasion? Send us a message. We&apos;re always happy to talk cookies.
+        </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <a href={wa} target="_blank" rel="noopener" style={{ ...row, background: '#711D2C', color: '#F8F6EC' }}>
             WhatsApp <span style={sub}>{c?.whatsapp || site.whatsappNumber || 'number to be supplied'}</span>
@@ -37,7 +39,7 @@ export const ContactPage = () => {
           <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
             <strong style={{ color: '#1E1310' }}>Collection location</strong>
             <br />
-            {c?.address || site.collectionLocation || 'Shared on confirmation'}
+            {c?.address || site.collectionLocation}
           </div>
           <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
             <strong style={{ color: '#1E1310' }}>Hours</strong>

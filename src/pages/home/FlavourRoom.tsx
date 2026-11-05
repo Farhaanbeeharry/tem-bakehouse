@@ -2,29 +2,27 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CookieViewer } from '../../components/CookieViewer';
 import { flavourById } from '../../data/catalog';
-import { asset, probeFile } from '../../lib/assets';
-import { fmt, dietLabel } from '../../lib/format';
-import { useShop } from '../../lib/shop';
+import { asset } from '../../lib/assets';
 import { useProducts } from '../../lib/store';
 
-type StageMode = 'model' | 'textured';
-
-const useStageMode = (flavour: string): StageMode | null => {
-  const [model, setModel] = useState<{ id: string; ok: boolean } | null>(null);
+/** Warm the HTTP cache for the flavour the visitor is most likely to pick next, once the stage is idle. */
+const usePrefetchModel = (flavour: string | undefined) => {
   useEffect(() => {
-    let alive = true;
-    probeFile(asset.model(flavour)).then((ok) => alive && setModel({ id: flavour, ok }));
-    return () => {
-      alive = false;
-    };
+    if (!flavour) return;
+    const t = setTimeout(() => {
+      const href = asset.model(flavour);
+      if (document.head.querySelector(`link[rel="prefetch"][href="${href}"]`)) return;
+      const l = document.createElement('link');
+      l.rel = 'prefetch';
+      l.href = href;
+      document.head.appendChild(l);
+    }, 2500);
+    return () => clearTimeout(t);
   }, [flavour]);
-  if (!model || model.id !== flavour) return null;
-  return model.ok ? 'model' : 'textured';
 };
 
 export const FlavourRoom = () => {
   const navigate = useNavigate();
-  const { addLine, showToast } = useShop();
   const P = useProducts();
   const featured = useMemo(() => P.filter((p) => p.cat === 'round' && p.featured && p.status === 'available'), [P]);
   const [idx, setIdx] = useState(0);
@@ -32,7 +30,7 @@ export const FlavourRoom = () => {
   const fi = featured.length ? ((idx % featured.length) + featured.length) % featured.length : 0;
   const fp = featured[fi];
   const flavour = fp?.flavour ?? 'choco-chips';
-  const mode = useStageMode(flavour);
+  usePrefetchModel(featured.length > 1 ? featured[(fi + 1) % featured.length].flavour : undefined);
   const touch = useMemo(() => window.matchMedia('(hover: none)').matches, []);
   if (!fp) return null;
   const ff = flavourById[fp.flavour];
@@ -50,16 +48,16 @@ export const FlavourRoom = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 40 }}>
           <div>
             <div className="eyebrow">01 — The Flavour Room</div>
-            <h2 className="display" style={{ fontSize: 'clamp(40px,6.4vw,104px)' }}>
-              Turn it.
+            <h2 className="display" style={{ fontSize: 'clamp(36px,5.2vw,88px)' }}>
+              Turn it, break it,
               <br />
-              Break it.
+              crave it &amp;
               <br />
-              <em style={{ color: '#711D2C' }}>Choose it.</em>
+              <em style={{ color: '#711D2C' }}>pick yours.</em>
             </h2>
           </div>
           <p className="lede" style={{ maxWidth: '34ch' }}>
-            A real-time 3D cookie you can turn, inspect and break open. Pick a flavour to change it.
+            A real-time 3D cookie you can turn, inspect and break open. Click a flavour to change it.
           </p>
         </div>
 
@@ -75,7 +73,7 @@ export const FlavourRoom = () => {
             {<CookieViewer flavour={flavour} broken={broken} onBreakChange={setBroken} />}
 
             <div style={{ position: 'absolute', left: 18, top: 16, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.16em', color: '#6E5C4D', pointerEvents: 'none' }}>
-              {mode ? (touch ? 'DRAG TO TURN · TAP “BREAK IT OPEN”' : 'DRAG TO TURN · DOUBLE-CLICK TO BREAK') : ''}
+              {touch ? 'DRAG TO TURN · TAP “BREAK IT OPEN”' : 'DRAG TO TURN · DOUBLE-CLICK TO BREAK'}
             </div>
             <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <button type="button" className="btn btn-dark" style={{ padding: '13px 20px' }} onClick={() => setBroken((b) => !b)}>
@@ -101,19 +99,25 @@ export const FlavourRoom = () => {
           </div>
 
           <div>
-            <div role="list" style={{ borderTop: '1px solid #D9CDB4' }}>
+            <div role="group" aria-label="Choose a flavour" style={{ borderTop: '1px solid #D9CDB4' }}>
               {featured.map((p, i) => (
-                <div
+                <button
                   key={p.id}
-                  role="listitem"
-                  onMouseEnter={() => pick(i)}
+                  type="button"
+                  aria-pressed={i === fi}
                   onClick={() => pick(i)}
+                  className="flavour-row"
                   style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    background: 'none',
+                    border: 'none',
+                    font: 'inherit',
                     display: 'grid',
-                    gridTemplateColumns: '40px 1fr auto',
+                    gridTemplateColumns: '34px 1fr auto',
                     alignItems: 'center',
-                    gap: 16,
-                    padding: `14px 4px 14px ${i === fi ? 18 : 4}px`,
+                    gap: 14,
+                    padding: `9px 4px 9px ${i === fi ? 18 : 4}px`,
                     borderBottom: '1px solid #D9CDB4',
                     cursor: 'pointer',
                     color: i === fi ? '#711D2C' : '#1E1310',
@@ -121,30 +125,25 @@ export const FlavourRoom = () => {
                   }}
                 >
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{String(i + 1).padStart(2, '0')}</span>
-                  <span style={{ fontWeight: 800, fontStretch: '110%', fontSize: 'clamp(22px,2.4vw,34px)', lineHeight: 1, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>{p.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>{p.diet === 'both' ? 'GF available' : p.diet === 'gf' ? 'GF' : ''}</span>
-                </div>
+                  <span style={{ fontWeight: 800, fontStretch: '110%', fontSize: 'clamp(19px,1.9vw,28px)', lineHeight: 1, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>{p.name}</span>
+                  {p.diet !== 'regular' ? (
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.04em', padding: '4px 8px', borderRadius: 999, background: '#E2EAD6', color: '#3D5226' }}>{p.diet === 'gf' ? 'GF' : 'GF available'}</span>
+                  ) : (
+                    <span />
+                  )}
+                </button>
               ))}
             </div>
-            <div style={{ marginTop: 26, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <p style={{ margin: 0, fontSize: 17, lineHeight: 1.55, color: '#6E5C4D', maxWidth: '46ch' }}>{fp.desc}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em' }}>{fmt(fp.price)}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 999, background: '#E5DCC5' }}>{dietLabel(fp.diet)}</span>
-              </div>
+            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <span style={{ fontSize: 13, color: '#6E5C4D' }}>
+                <strong style={{ color: '#3D5226' }}>GF available</strong> — this flavour can also be made gluten-free.
+              </span>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => {
-                    addLine(fp, { pack: 'p1', qty: 1 });
-                    showToast(fp.name + ' added to your order request');
-                  }}
-                >
-                  Add single to request
+                <button type="button" className="btn btn-primary" onClick={() => navigate('/cookies/' + fp.id)}>
+                  Order {fp.name}
                 </button>
-                <button type="button" className="btn btn-outline" onClick={() => navigate('/cookies/' + fp.id)}>
-                  Details &amp; pack sizes
+                <button type="button" className="btn btn-outline" onClick={() => navigate('/cookies/build-box')}>
+                  Build a box of 4
                 </button>
               </div>
             </div>

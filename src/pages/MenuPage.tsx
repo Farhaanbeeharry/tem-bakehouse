@@ -40,7 +40,7 @@ export const MenuPage = () => {
           <h1 className="h-page">Our Cookies</h1>
         </div>
         <p className="lede" style={{ maxWidth: '42ch' }}>
-          Every order is baked for your date. Gluten-free availability is marked per product.
+          Every order is freshly baked for your date. Gluten-free options are clearly marked on each product.
         </p>
       </div>
 

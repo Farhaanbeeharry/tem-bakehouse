@@ -3,12 +3,12 @@ import { StatusBadge } from '../components/StatusBadge';
 import { statuses, type StatusId } from '../data/catalog';
 
 const STEPS = [
-  ['Choose your cookies', 'Browse the menu, choose regular or gluten-free where available, pick pack sizes and add personalisation.', 'Builds your order request'],
-  ['Submit your request', 'Sign in, choose a collection date and time, accept the policies and submit. You get a reference number.', 'Status: Pending Review'],
+  ['Choose your cookies', 'Browse the menu, choose your type of cookies, pack size and add your personal touch.', 'Builds your order request'],
+  ['Submit your request', 'Sign in, or sign in as Guest, choose a collection date and time, accept the policies and submit. You’ll get a reference number. Accepting the Order Policy is required.', 'Status: Pending Review'],
   ['TEM reviews it', 'TEM Bakehouse checks the date and items. If anything needs to change, you approve the revised details first.', 'Status: Pending Review → Deposit Required'],
   ['Pay the 50% deposit', 'Only once requested. Follow the payment instructions in your account and submit your payment details.', 'Status: Deposit Verification Pending'],
-  ['Receive confirmation', 'TEM verifies the deposit. Only then is your order confirmed.', 'Status: Order Confirmed'],
-  ['Collect & pay the balance', 'Collect at your chosen time and pay the remaining 50%. When delivery launches, this step becomes delivery.', 'Status: Ready for Collection → Collected'],
+  ['Receive confirmation', 'Once your deposit is verified, your date is secured and your order is confirmed.', 'Status: Order Confirmed'],
+  ['Collect & pay the balance', 'Collect from Terre Rouge or Port Louis at your chosen time and pay the remaining 50%. Delivery coming soon. This step will be updated when it launches.', 'Status: Ready for Collection → Collected'],
 ];
 
 export const HowPage = () => {
@@ -24,7 +24,7 @@ export const HowPage = () => {
         craving to collection.
       </h1>
       <p style={{ margin: '0 0 56px', maxWidth: '52ch', fontSize: 17, lineHeight: 1.6, color: '#6E5C4D' }}>
-        Ordering from TEM Bakehouse is a conversation, not a checkout. You send a request; TEM reviews it and confirms everything with you.
+        Ordering from TEM Bakehouse is a conversation, not a checkout. Send us your request, and we&apos;ll review it and confirm every detail with you personally.
       </p>
       <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {STEPS.map(([t, d, s], i) => (

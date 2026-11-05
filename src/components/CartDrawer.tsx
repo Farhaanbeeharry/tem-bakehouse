@@ -5,12 +5,21 @@ import { useIsMobile, useShop } from '../lib/shop';
 import { useProducts } from '../lib/store';
 import { fmt } from '../lib/format';
 import type { OrderLine } from '../lib/store';
+import { flavourById } from '../data/catalog';
 
-export const lineMeta = (l: OrderLine) => l.pack + ' · ' + (l.diet === 'gf' ? 'Gluten-free' : 'Regular');
+export const lineMeta = (l: OrderLine) =>
+  [l.pack, l.diet === 'gf' ? 'Gluten-free' : 'Regular', l.filling && 'Filling: ' + l.filling, l.box && boxSummary(l.box)].filter(Boolean).join(' · ');
+
+/** "2 × Choco Chips, Pistachio, Biscoff" */
+export const boxSummary = (ids: string[]) => {
+  const counts = new Map<string, number>();
+  ids.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1));
+  return [...counts].map(([id, n]) => (n > 1 ? n + ' × ' : '') + (flavourById[id]?.name ?? id)).join(', ');
+};
 export const customText = (l: OrderLine) => (l.custom ? [l.custom.occasion, l.custom.message].filter(Boolean).join(' · ') : '');
 
 export const CartDrawer = () => {
-  const { drawerOpen, setDrawerOpen, cart, setCart, cartCount, estimate, user, openAuth, addLine, showToast } = useShop();
+  const { drawerOpen, setDrawerOpen, cart, setCart, cartCount, estimate, user, guest, openAuth, addLine, showToast } = useShop();
   const mobile = useIsMobile();
   const navigate = useNavigate();
   const P = useProducts();
@@ -22,7 +31,7 @@ export const CartDrawer = () => {
   const close = () => setDrawerOpen(false);
   const toCheckout = () => {
     close();
-    if (!user) openAuth('register', true);
+    if (!user && !guest) openAuth('login', true);
     else navigate('/checkout');
   };
   const browse = () => {
@@ -162,7 +171,7 @@ export const CartDrawer = () => {
               TEM Bakehouse reviews every request and confirms the final price. A 50% deposit is requested only after acceptance.
             </p>
             <button type="button" className="btn btn-primary" style={{ minHeight: 54 }} onClick={toCheckout}>
-              {user ? 'Continue to collection details' : 'Sign in to continue'}
+              {user || guest ? 'Continue to collection details' : 'Sign in / Sign in as Guest'}
             </button>
           </div>
         )}

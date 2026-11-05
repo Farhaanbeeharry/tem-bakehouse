@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProductVisual } from '../components/ProductVisual';
 import { customText, lineMeta } from '../components/CartDrawer';
-import { DEMO_CUSTOMER_ID } from '../data/catalog';
+import { COLLECTION_POINTS, DEMO_CUSTOMER_ID } from '../data/catalog';
 import { fmt, isoDay, niceDate } from '../lib/format';
 import { useShop } from '../lib/shop';
 import { nextRef, setStore, useStore, type Order, type Settings } from '../lib/store';
@@ -50,37 +50,44 @@ const SectionTitle = ({ n, children }: { n: string; children: string }) => (
 
 export const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { cart, setCart, estimate, user, openAuth, setDrawerOpen } = useShop();
+  const { cart, setCart, estimate, user, guest, setGuest, openAuth, setDrawerOpen } = useShop();
   const { settings, orders } = useStore();
   const [calM, setCalM] = useState(0);
-  const [ck, setCk] = useState({ date: '', slot: '', name: user?.name ?? '', phone: user?.phone ?? '', notes: '', a1: false, a2: false, tried: false });
+  const [ck, setCk] = useState({ location: '', date: '', slot: '', name: user?.name ?? '', phone: user?.phone ?? '', email: user?.email ?? '', notes: '', a1: false, a2: false, tried: false });
   const cal = useMemo(() => buildMonth(calM, settings, orders), [calM, settings, orders]);
   const set = (o: Partial<typeof ck>) => setCk((x) => ({ ...x, ...o }));
 
-  if (!user || cart.length === 0) {
+  if ((!user && !guest) || cart.length === 0) {
     return (
       <main className="page page-narrow" style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start' }}>
-        <h1 className="h-page">{cart.length === 0 ? 'Your request is empty.' : 'Sign in to continue.'}</h1>
-        <p className="lede">{cart.length === 0 ? 'Add a few cookies first, then choose your collection date.' : 'Your selections are saved. Sign in or create an account to choose a date and submit.'}</p>
+        <h1 className="h-page">{cart.length === 0 ? 'Your request is empty.' : 'Sign in, or sign in as Guest.'}</h1>
+        <p className="lede">{cart.length === 0 ? 'Add a few cookies first, then choose your collection date.' : 'Your selections are saved. Sign in to track your order from your account, or sign in as Guest.'}</p>
         {cart.length === 0 ? (
           <Link to="/cookies" className="btn btn-primary">
             Browse cookies
           </Link>
         ) : (
-          <button type="button" className="btn btn-primary" onClick={() => openAuth('login', true)}>
-            Sign in
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-primary" onClick={() => openAuth('login', true)}>
+              Sign in
+            </button>
+            <button type="button" className="btn btn-outline" onClick={() => setGuest(true)}>
+              Sign in as Guest
+            </button>
+          </div>
         )}
       </main>
     );
   }
 
   const errs: string[] = [];
+  if (!ck.location) errs.push('Choose a collection point');
   if (!ck.date) errs.push('Choose a collection date');
   if (ck.date && !ck.slot) errs.push('Choose a collection time');
   if (!ck.name.trim()) errs.push('Add your name');
   if (ck.phone.replace(/\D/g, '').length < 7) errs.push('Add a phone number TEM can reach you on');
-  if (!ck.a1 || !ck.a2) errs.push('Accept the Order Policy and Business Policy');
+  if (!user && !/.+@.+\..+/.test(ck.email)) errs.push('Add an email address for updates');
+  if (!ck.a1) errs.push('Accept the Order Policy');
 
   const submit = () => {
     if (errs.length) return set({ tried: true });
@@ -92,6 +99,7 @@ export const CheckoutPage = () => {
       date: ck.date,
       slot: ck.slot,
       method: 'collection',
+      location: ck.location,
       status: 'pending_review',
       items: cart,
       notes: ck.notes,
@@ -103,6 +111,8 @@ export const CheckoutPage = () => {
       internal: '',
       contactName: ck.name,
       phone: ck.phone,
+      email: user?.email ?? ck.email,
+      mediaConsent: ck.a2,
     };
     setStore((s) => ({ ...s, orders: [order, ...s.orders] }));
     setCart(() => []);
@@ -127,14 +137,26 @@ export const CheckoutPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
           <section aria-label="Collection" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <SectionTitle n="01">Collection</SectionTitle>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
-              <div style={{ border: '1.5px solid #711D2C', background: '#F2E3DF', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <strong style={{ fontSize: 15 }}>Collection</strong>
-                <span style={{ fontSize: 13, color: '#6E5C4D' }}>Collect from TEM Bakehouse. Location shared on confirmation.</span>
-              </div>
+            <div role="radiogroup" aria-label="Collection point" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
+              {COLLECTION_POINTS.map((pt) => {
+                const on = ck.location === pt;
+                return (
+                  <button
+                    key={pt}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => set({ location: pt })}
+                    style={{ textAlign: 'left', cursor: 'pointer', border: `1.5px solid ${on ? '#711D2C' : ck.tried && !ck.location ? '#B23A33' : '#D9CDB4'}`, background: on ? '#F2E3DF' : '#F8F6EC', color: '#1E1310', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}
+                  >
+                    <strong style={{ fontSize: 15 }}>Collect · {pt}</strong>
+                    <span style={{ fontSize: 13, color: '#6E5C4D' }}>Exact address shared on confirmation.</span>
+                  </button>
+                );
+              })}
               <div aria-disabled="true" style={{ border: '1.5px dashed #C7B593', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4, color: '#8A7A6A' }}>
                 <strong style={{ fontSize: 15 }}>Delivery</strong>
-                <span style={{ fontSize: 13 }}>{settings.delivery ? 'Coming soon to online requests.' : 'Not available yet.'}</span>
+                <span style={{ fontSize: 13 }}>Coming soon.</span>
               </div>
             </div>
 
@@ -247,10 +269,26 @@ export const CheckoutPage = () => {
                 />
               </label>
             </div>
-            <label className="field">
-              Email
-              <input className="input" value={user.email} readOnly />
-            </label>
+            {user ? (
+              <label className="field">
+                Email
+                <input className="input" value={user.email} readOnly />
+              </label>
+            ) : (
+              <label className="field">
+                <span>
+                  Email <span className="hint">Ordering as a guest — updates are sent here</span>
+                </span>
+                <input
+                  className={`input ${ck.tried && !/.+@.+\..+/.test(ck.email) ? 'invalid' : ''}`}
+                  type="email"
+                  value={ck.email}
+                  onChange={(e) => set({ email: e.target.value })}
+                  autoComplete="email"
+                  placeholder="you@example.mu"
+                />
+              </label>
+            )}
             <label className="field">
               <span>
                 Notes for TEM <span className="hint">Optional</span>
@@ -268,15 +306,15 @@ export const CheckoutPage = () => {
                 <Link to="/policies/order" target="_blank">
                   Order Policy
                 </Link>
-                .
+                . <span style={{ color: '#711D2C' }}>(required)</span>
               </span>
             </label>
             <label className="check">
               <input type="checkbox" checked={ck.a2} onChange={() => set({ a2: !ck.a2 })} />
               <span>
                 I have read and accept the{' '}
-                <Link to="/policies/business" target="_blank">
-                  Business Policy
+                <Link to="/policies/media" target="_blank">
+                  Photo &amp; Media Policy
                 </Link>
                 .
               </span>

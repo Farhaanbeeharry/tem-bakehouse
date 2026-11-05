@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Cookie } from '../components/Cookie';
 import { ProductCard } from '../components/ProductCard';
 import { productPhotoSrc } from '../components/ProductVisual';
-import { categories, flavourById, flavours } from '../data/catalog';
+import { FILLINGS, categories, flavourById, flavours } from '../data/catalog';
 import { asset, useImageExists } from '../lib/assets';
 import { fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
@@ -37,7 +37,7 @@ const ProductDetail = ({ id }: { id: string }) => {
   const P = useProducts();
   const { addLine, setDrawerOpen, favs, toggleFav } = useShop();
   const p = P.find((x) => x.id === id)!;
-  const [pd, setPd] = useState({ pack: p.packs[0].id, qty: 1, diet: (p.diet === 'gf' ? 'gf' : 'regular') as 'regular' | 'gf', flavour: p.flavour, occasion: '', message: '', instructions: '' });
+  const [pd, setPd] = useState({ pack: p.packs[0].id, qty: 1, diet: (p.diet === 'gf' ? 'gf' : 'regular') as 'regular' | 'gf', flavour: p.flavour, occasion: '', message: '', instructions: '', filling: '', box: [] as string[] });
   const [picked, setView] = useState<View | null>(null);
   const f = flavourById[pd.flavour];
   const shapeSrc = productPhotoSrc(p.id);
@@ -53,10 +53,28 @@ const ProductDetail = ({ id }: { id: string }) => {
   const cat = categories.find((c) => c.id === p.cat)!;
   const recs = P.filter((x) => x.id !== p.id && x.status === 'available' && (x.cat !== p.cat || x.featured)).slice(0, 4);
   const set = (o: Partial<typeof pd>) => setPd((x) => ({ ...x, ...o }));
+  const boxFlavours = flavours.filter((o) => o.status === 'available' && (pd.diet === 'regular' || o.diet !== 'regular'));
+  const boxLeft = p.boxOf ? p.boxOf - pd.box.length : 0;
+  const needsFilling = !!p.fillings && !pd.filling;
+  const blocked = soon || boxLeft > 0 || needsFilling;
+  const setDiet = (diet: 'regular' | 'gf') => set({ diet, box: diet === 'gf' ? pd.box.filter((id) => flavourById[id].diet !== 'regular') : pd.box });
+  const boxAdd = (id: string) => boxLeft > 0 && set({ box: [...pd.box, id] });
+  const boxRemove = (id: string) => {
+    const i = pd.box.lastIndexOf(id);
+    if (i >= 0) set({ box: pd.box.filter((_, k) => k !== i) });
+  };
 
   const add = () => {
-    if (soon) return;
-    addLine(p, { pack: pk.id, qty: pd.qty, diet: pd.diet, flavour: pd.flavour, custom: p.custom ? { occasion: pd.occasion, message: pd.message, instructions: pd.instructions } : null });
+    if (blocked) return;
+    addLine(p, {
+      pack: pk.id,
+      qty: pd.qty,
+      diet: pd.diet,
+      flavour: p.boxOf ? pd.box[0] : pd.flavour,
+      custom: p.custom ? { occasion: pd.occasion, message: pd.message, instructions: pd.instructions } : null,
+      ...(p.fillings ? { filling: pd.filling } : null),
+      ...(p.boxOf ? { box: [...pd.box] } : null),
+    });
     setDrawerOpen(true);
   };
 
@@ -79,7 +97,24 @@ const ProductDetail = ({ id }: { id: string }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 'clamp(28px,5vw,80px)', alignItems: 'start' }}>
         <div style={{ position: 'sticky', top: 90, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 28, background: '#E5DCC5', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
-            {view === 'whole' && (
+            {p.boxOf ? (
+              <div style={{ position: 'absolute', inset: '8%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6%' }} aria-label={`Your box: ${pd.box.length} of ${p.boxOf} chosen`}>
+                {Array.from({ length: p.boxOf }, (_, i) => {
+                  const id = pd.box[i];
+                  return (
+                    <div key={i} style={{ display: 'grid', placeItems: 'center', borderRadius: '50%', border: id ? 'none' : '2px dashed #C7B593' }}>
+                      {id ? (
+                        <div key={id + i} style={{ width: '100%', animation: 'temFade .4s ease both' }}>
+                          <Cookie flavour={id} />
+                        </div>
+                      ) : (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8A7A6A' }}>{String(i + 1).padStart(2, '0')}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : view === 'whole' && (
               <div key={f.id} style={{ width: '74%', transform: `rotate(${flavours.indexOf(f) * 40}deg)`, transition: 'transform 1s var(--ease)', animation: 'temFade .5s ease both' }}>
                 <Cookie flavour={f.id} />
               </div>
@@ -91,7 +126,7 @@ const ProductDetail = ({ id }: { id: string }) => {
               <div style={{ position: 'absolute', left: 18, bottom: 16, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6E5C4D' }}>PROVISIONAL VISUAL · awaiting product photo</div>
             )}
           </div>
-          {views.length > 1 && (
+          {!p.boxOf && views.length > 1 && (
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(3, views.length)},1fr)`, gap: 12 }}>
               {views.map((v) => (
                 <Thumb key={v} label={v === 'shape' ? p.name : v === 'whole' ? `${f.name} cookie` : v === 'broken' ? 'the break' : 'the inside'} on={view === v} onPick={() => setView(v)}>
@@ -143,14 +178,20 @@ const ProductDetail = ({ id }: { id: string }) => {
               ).map(([d, label]) => {
                 const avail = p.diet === 'both' || p.diet === d;
                 return (
-                  <button key={d} type="button" disabled={!avail} className={`choice solid ${pd.diet === d ? 'on' : ''}`} onClick={() => set({ diet: d })}>
+                  <button key={d} type="button" disabled={!avail} className={`choice solid ${pd.diet === d ? 'on' : ''}`} onClick={() => setDiet(d)}>
                     {avail ? label : label + ' — not available'}
                   </button>
                 );
               })}
             </div>
             <span style={{ fontSize: 12, color: '#6E5C4D' }}>
-              {p.diet === 'both' ? 'Available in both versions. Choose one per line.' : p.diet === 'gf' ? 'Gluten-free only.' : 'Regular only — no gluten-free version for this item.'}
+              {p.boxOf
+                ? 'A gluten-free box can include Choco Chips, Pistachio, Plain, Pinky and Nutty Crunch.'
+                : p.diet === 'both'
+                  ? 'Available in both versions. Choose one per line.'
+                  : p.diet === 'gf'
+                    ? 'Gluten-free only.'
+                    : 'Regular only — no gluten-free version for this item.'}
             </span>
           </fieldset>
 
@@ -165,6 +206,55 @@ const ProductDetail = ({ id }: { id: string }) => {
                 ))}
               </select>
             </label>
+          )}
+
+          {p.boxOf && (
+            <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: 'flex', gap: 10 }}>
+                Choose {p.boxOf} cookies
+                <span aria-live="polite" style={{ fontWeight: 500, color: boxLeft ? '#711D2C' : '#3D5226' }}>
+                  {boxLeft ? `${boxLeft} left to pick` : 'Box complete'}
+                </span>
+              </legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,230px),1fr))', gap: 8 }}>
+                {boxFlavours.map((o) => {
+                  const n = pd.box.filter((x) => x === o.id).length;
+                  return (
+                    <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 14, border: `1px solid ${n ? '#711D2C' : '#D9CDB4'}`, background: n ? '#F2E3DF' : '#F8F6EC' }}>
+                      <div style={{ width: 34, flex: '0 0 34px' }}>
+                        <Cookie flavour={o.id} flat />
+                      </div>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>
+                        {o.name}
+                        {o.diet !== 'regular' && <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#3D5226' }}>GF available</span>}
+                      </span>
+                      <div className="qty" style={{ transform: 'scale(.86)', transformOrigin: 'right center' }}>
+                        <button type="button" aria-label={`Remove one ${o.name}`} disabled={!n} onClick={() => boxRemove(o.id)}>
+                          −
+                        </button>
+                        <span>{n}</span>
+                        <button type="button" aria-label={`Add one ${o.name}`} disabled={!boxLeft} onClick={() => boxAdd(o.id)}>
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {p.fillings && (
+            <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Filling</legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
+                {FILLINGS.map((fl) => (
+                  <button key={fl} type="button" className={`choice ${pd.filling === fl ? 'on' : ''}`} aria-pressed={pd.filling === fl} onClick={() => set({ filling: fl })} style={{ minHeight: 52, background: pd.filling === fl ? '#F2E3DF' : '#F8F6EC' }}>
+                    {fl}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           )}
 
           <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
@@ -223,8 +313,8 @@ const ProductDetail = ({ id }: { id: string }) => {
                 +
               </button>
             </div>
-            <button type="button" className="btn btn-primary" disabled={soon} onClick={add} style={{ flex: '1 1 220px', height: 52 }}>
-              {soon ? 'Coming soon' : 'Add to Order Request'}
+            <button type="button" className="btn btn-primary" disabled={blocked} onClick={add} style={{ flex: '1 1 220px', height: 52 }}>
+              {soon ? 'Coming soon' : boxLeft > 0 ? `Pick ${boxLeft} more` : needsFilling ? 'Choose a filling' : 'Add to Order Request'}
             </button>
             <button
               type="button"

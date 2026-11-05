@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {
-  BOTTOM_Y, LOOKS, buildBody, photoRadius, buildFace, chipGeo, crumbGeo, crumbTextures, doughTextures, insideXZ, rng, seam, seamMaterial, topAt,
+  BOTTOM_Y, LOOKS, buildBody, buildFace, chipGeo, crumbGeo, crumbTextures, doughTextures, fbm, insideXZ, rng, seam, seamMaterial, topAt, vnoise,
   type ChipKind, type FlavourLook,
 } from './proceduralCookie';
 
@@ -9,25 +10,62 @@ type Options = {
   flavour: string;
   modelUrl?: (flavour: string) => string;
   hasModel?: (flavour: string) => Promise<boolean>;
-  /** Top-down photo unwrapped to a disk (see public/assets/products/{id}/tem_{id}_top.webp). */
-  photoUrl?: (flavour: string) => string;
-  preloadPhotos?: string[];
   onBreak?: (on: boolean) => void;
+  /** True while the requested flavour is loading. */
+  onLoading?: (on: boolean) => void;
 };
-
-type PhotoLook = { map: THREE.Texture; rough: THREE.Texture; geo: THREE.BufferGeometry };
 
 type CrumbDatum = { o: THREE.Vector3; v: THREE.Vector3; s: number; spin: THREE.Vector3; delay: number };
 
-type ModelEntry = { root: THREE.Object3D; left: THREE.Object3D | null; right: THREE.Object3D | null };
+type ModelEntry = { halves: [THREE.Group, THREE.Group]; caps: THREE.Mesh[] };
 
-const LEFT_RE = /(^|[_\-. ])(left|l|half_?a|half_?1|a)$/i;
-const RIGHT_RE = /(^|[_\-. ])(right|r|half_?b|half_?2|b)$/i;
+/** Models kept in memory; older ones are freed. */
+const MODEL_CACHE = 3;
+
+/**
+ * The break surface, made larger than any cookie. It is only drawn where the stencil says the cut half is open,
+ * so it fills the cross-section exactly, whatever the model's silhouette.
+ */
+const buildCap = (top: number) => {
+  const NZ = 160, NV = 40, z0 = -1.35, z1 = 1.35, y0 = BOTTOM_Y - 0.08, y1 = top + 0.12;
+  const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  for (let i = 0; i <= NZ; i++) {
+    const z = z0 + ((z1 - z0) * i) / NZ;
+    for (let j = 0; j <= NV; j++) {
+      const y = y0 + ((y1 - y0) * j) / NV;
+      const rough = (fbm(z * 14 + 1.7, y * 14, 3.3, 4) - 0.5) * 0.05 + (vnoise(z * 60, y * 60, 1.7) - 0.5) * 0.01;
+      pos.push(seam(z, y) + rough, y, z);
+      uv.push(z * 1.4 + 0.5, y * 1.4 + 0.5);
+    }
+  }
+  const W = NV + 1;
+  for (let i = 0; i < NZ; i++)
+    for (let j = 0; j < NV; j++) {
+      const a = i * W + j, b = a + 1, c = a + W, d = c + 1;
+      idx.push(a, b, c, b, d, c);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+};
+
+/** Counts how often a view ray crosses one open half: non-zero means the ray looks into the cut. */
+const stencilPass = (side: number, face: THREE.Side, op: THREE.StencilOp) =>
+  seamMaterial(
+    new THREE.MeshBasicMaterial({
+      side: face, colorWrite: false, depthWrite: false, depthTest: false,
+      stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilFail: op, stencilZFail: op, stencilZPass: op,
+    }),
+    side,
+  );
 
 /**
  * Interactive turntable for the Flavour Room.
  * Shows /models/tem_{flavour}.glb when it exists, otherwise the procedural stand-in cookie.
- * A GLB that contains two top-level children named "..._left" and "..._right" (or half_a / half_b) breaks open along them.
+ * A loaded model is rendered twice, each copy clipped to one side of the break seam, so any whole-cookie GLB breaks open.
  */
 export class CookieScene {
   private renderer: THREE.WebGLRenderer;
@@ -51,13 +89,13 @@ export class CookieScene {
   private strands: THREE.Mesh[];
   private strandSeeds = Array.from({ length: 6 }, (_, i) => ({ z: -0.55 + i * 0.22 + (i % 2) * 0.05, y: 0.02 + (i % 3) * 0.05, r: 0.016 + (i % 3) * 0.008, snap: 0.42 + i * 0.045 }));
   private texCache: Record<string, { d: ReturnType<typeof doughTextures>; c: ReturnType<typeof crumbTextures> }> = {};
-  private models: Record<string, Promise<ModelEntry | null>> = {};
-  private photos: Record<string, Promise<PhotoLook | null>> = {};
-  private photoReady: Record<string, PhotoLook | null> = {};
-  private baseBodyGeo!: THREE.BufferGeometry;
-  private NR = 150;
-  private NS = 360;
+  private crumbCache: Record<string, ReturnType<typeof crumbTextures>> = {};
+  private models = new Map<string, Promise<ModelEntry | null>>();
   private activeModel: ModelEntry | null = null;
+  private showingProcedural = false;
+  private pending: (() => void) | null = null;
+  private visible = true;
+  private io: IntersectionObserver;
   private look: FlavourLook = LOOKS['choco-chips'];
   private flavourToken = 0;
   private dummy = new THREE.Object3D();
@@ -67,7 +105,7 @@ export class CookieScene {
   private disposed = false;
   private low: boolean;
   private opts: Options;
-  private st = { px: 0, py: 0, sx: 0, sy: 0, rotY: 0.4, rotX: 0, dragging: false, breakTarget: 0, b: 0, spin: 0, lx: 0, ly: 0, reduced: false };
+  private st = { px: 0, py: 0, sx: 0, sy: 0, rotY: 0.4, rotX: 0, dragging: false, breakTarget: 0, b: 0, spin: 0, lx: 0, ly: 0, reduced: false, show: 0, showTarget: 0 };
 
   private container: HTMLElement;
 
@@ -75,11 +113,11 @@ export class CookieScene {
     this.container = container;
     this.opts = opts;
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
-    this.low = Math.min(w, h) < 420 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    this.low = Math.min(w, h) < 420 || (navigator.hardwareConcurrency ?? 8) <= 4 || matchMedia('(hover: none)').matches;
     this.st.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.low ? 1.5 : 2));
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.low ? 1.25 : 1.75));
     this.renderer.setSize(w, h);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -116,7 +154,7 @@ export class CookieScene {
     this.key = new THREE.DirectionalLight('#ffd7a6', 3.2);
     this.key.position.set(-3, 5, 2.5);
     this.key.castShadow = true;
-    this.key.shadow.mapSize.set(this.low ? 1024 : 2048, this.low ? 1024 : 2048);
+    this.key.shadow.mapSize.set(1024, 1024);
     Object.assign(this.key.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: 0.5, far: 14 });
     this.key.shadow.bias = -0.0004;
     this.key.shadow.normalBias = 0.02;
@@ -145,11 +183,7 @@ export class CookieScene {
       return g;
     });
 
-    const NR = this.low ? 90 : 150, NS = this.low ? 200 : 360;
-    this.NR = NR;
-    this.NS = NS;
-    const bodyGeo = buildBody(NR, NS);
-    this.baseBodyGeo = bodyGeo;
+    const bodyGeo = buildBody(this.low ? 90 : 150, this.low ? 200 : 360);
     const faceGeo = buildFace(this.low ? 140 : 220, this.low ? 26 : 44, 1.7);
     this.halves.forEach((hv, i) => {
       const side = hv.userData.side as number;
@@ -170,8 +204,8 @@ export class CookieScene {
     this.chipGeos = { chip: [], chunk: [], bits: [], nut: [] };
     (['chip', 'chunk', 'bits', 'nut'] as const).forEach((k) => (this.chipGeos[k] = [0, 1, 2, 3].map((s) => chipGeo(k, s * 7 + 1))));
 
-    this.NC = this.low ? 140 : 320;
-    this.NSH = this.low ? 24 : 60;
+    this.NC = this.low ? 120 : 240;
+    this.NSH = this.low ? 20 : 48;
     this.crumbs = new THREE.InstancedMesh(crumbGeo(5), this.crumbMat, this.NC);
     this.shards = new THREE.InstancedMesh(crumbGeo(9), this.shardMat, this.NSH);
     this.crumbs.castShadow = this.shards.castShadow = true;
@@ -202,120 +236,60 @@ export class CookieScene {
     el.addEventListener('dblclick', this.onDbl);
     this.resizeObs = new ResizeObserver(() => this.resize());
     this.resizeObs.observe(container);
+    // Only draw while the stage is on screen.
+    this.io = new IntersectionObserver(([e]) => {
+      this.visible = e.isIntersecting;
+      cancelAnimationFrame(this.raf);
+      if (this.visible && !this.disposed) {
+        this.last = performance.now();
+        this.raf = requestAnimationFrame(this.frame);
+      }
+    });
+    this.io.observe(container);
 
-    this.setFlavour(opts.flavour, false);
-    if (opts.photoUrl) (opts.preloadPhotos ?? []).forEach((id) => this.loadPhoto(id));
+    this.cookie.visible = false;
+    this.setFlavour(opts.flavour);
     this.raf = requestAnimationFrame(this.frame);
   }
 
-  setFlavour(id: string, spin = true) {
+  /**
+   * Loads one flavour at a time. The current cookie stays on screen while the next one loads,
+   * then shrinks out and the new one spins in.
+   */
+  setFlavour(id: string) {
     const token = ++this.flavourToken;
-    if (spin) this.st.spin += Math.PI * 1.2;
     this.st.breakTarget = 0;
-    this.look = LOOKS[id] ?? LOOKS['choco-chips'];
-    const ready = this.photoReady[id];
-    if (ready) this.applyPhoto(id, ready);
-    else this.applyProcedural(id);
-    this.showModel(null);
-    if (ready === undefined && this.opts.photoUrl) {
-      this.loadPhoto(id).then((look) => {
-        if (look && token === this.flavourToken && !this.disposed) this.applyPhoto(id, look);
+    const swap = (apply: () => void) => {
+      if (token !== this.flavourToken || this.disposed) return;
+      this.opts.onLoading?.(false);
+      if (this.st.show === 0 && this.st.showTarget === 0) {
+        apply();
+        this.st.showTarget = 1;
+        return;
+      }
+      this.pending = apply;
+      this.st.showTarget = 0;
+    };
+    const procedural = () =>
+      swap(() => {
+        this.look = LOOKS[id] ?? LOOKS['choco-chips'];
+        this.showModel(null);
+        this.applyProcedural(id);
       });
-    }
+    this.opts.onLoading?.(true);
     const { hasModel, modelUrl } = this.opts;
-    if (!hasModel || !modelUrl) return;
+    if (!hasModel || !modelUrl) return procedural();
     hasModel(id).then((ok) => {
-      if (!ok || token !== this.flavourToken || this.disposed) return;
+      if (token !== this.flavourToken || this.disposed) return;
+      if (!ok) return procedural();
       this.loadModel(id, modelUrl(id)).then((entry) => {
-        if (entry && token === this.flavourToken && !this.disposed) this.showModel(entry);
+        if (!entry) return procedural();
+        swap(() => {
+          this.look = LOOKS[id] ?? LOOKS['choco-chips'];
+          this.showModel(entry);
+        });
       });
     });
-  }
-
-  private loadPhoto(id: string) {
-    if (!this.photos[id]) {
-      const url = this.opts.photoUrl!(id);
-      this.photos[id] = new Promise<PhotoLook | null>((resolve) => {
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = () => {
-          if (this.disposed) return resolve(null);
-          const S = 512;
-          const cv = document.createElement('canvas');
-          cv.width = cv.height = S;
-          const g = cv.getContext('2d', { willReadFrequently: true })!;
-          g.drawImage(img, 0, 0, S, S);
-          const data = g.getImageData(0, 0, S, S).data;
-          const lumAt = (px: number, py: number) => {
-            const x = Math.min(S - 1, Math.max(0, Math.round(px))), y = Math.min(S - 1, Math.max(0, Math.round(py)));
-            const o = (y * S + x) * 4;
-            return (data[o] * 0.299 + data[o + 1] * 0.587 + data[o + 2] * 0.114) / 255;
-          };
-          let sum = 0;
-          for (let i = 0; i < data.length; i += 16) sum += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
-          const mean = sum / (data.length / 16);
-          const relief = (u: number, th: number) => {
-            const ru = photoRadius(true, u);
-            const px = (Math.cos(th) * ru * 0.45 + 0.5) * S, py = (1 - (Math.sin(th) * ru * 0.45 + 0.5)) * S;
-            let l = 0;
-            for (let k = 0; k < 5; k++) l += lumAt(px + [0, 2, -2, 0, 0][k], py + [0, 0, 0, 2, -2][k]);
-            return (l / 5 - mean) * 0.06;
-          };
-          const geo = buildBody(this.NR, this.NS, relief);
-          const rc = document.createElement('canvas');
-          rc.width = rc.height = S;
-          const rg = rc.getContext('2d')!;
-          const ri = rg.createImageData(S, S);
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i] / 255, gg = data[i + 1] / 255, b = data[i + 2] / 255;
-            const lum = r * 0.299 + gg * 0.587 + b * 0.114;
-            const chocolate = Math.max(0, Math.min(1, (0.42 - lum) / 0.25)) * Math.max(0, Math.min(1, (r - b) * 4));
-            const v = Math.round((0.86 - chocolate * 0.55) * 255);
-            ri.data[i] = ri.data[i + 1] = ri.data[i + 2] = v;
-            ri.data[i + 3] = 255;
-          }
-          rg.putImageData(ri, 0, 0);
-          const map = new THREE.Texture(img);
-          map.colorSpace = THREE.SRGBColorSpace;
-          map.anisotropy = 8;
-          map.needsUpdate = true;
-          const rough = new THREE.CanvasTexture(rc);
-          resolve({ map, rough, geo });
-        };
-        img.onerror = () => resolve(null);
-        img.src = url;
-      }).then((look) => {
-        this.photoReady[id] = look;
-        return look;
-      });
-    }
-    return this.photos[id];
-  }
-
-  private applyPhoto(id: string, look: PhotoLook) {
-    if (!this.texCache[id]) this.texCache[id] = { d: doughTextures(this.look, this.low ? 256 : 512), c: crumbTextures(this.look, 512) };
-    const { c } = this.texCache[id];
-    this.bodies.forEach((b) => {
-      b.geometry = look.geo;
-      const m = b.material as THREE.MeshPhysicalMaterial;
-      m.map = look.map;
-      m.bumpMap = look.map;
-      m.bumpScale = 1.4;
-      m.roughnessMap = look.rough;
-      m.roughness = 1;
-      m.needsUpdate = true;
-    });
-    this.faces.forEach((f) => {
-      const m = f.material as THREE.MeshPhysicalMaterial;
-      m.map = c.map;
-      m.bumpMap = c.bump;
-      m.needsUpdate = true;
-    });
-    this.crumbMat.map = c.map;
-    this.crumbMat.bumpMap = c.bump;
-    this.crumbMat.needsUpdate = true;
-    this.shardMat.color.set(this.look.chip || '#2b170e');
-    this.chipGroups.forEach((g) => g.clear());
   }
 
   setBroken(on: boolean) {
@@ -326,20 +300,25 @@ export class CookieScene {
     this.disposed = true;
     cancelAnimationFrame(this.raf);
     this.resizeObs.disconnect();
+    this.io.disconnect();
     const el = this.renderer.domElement;
     el.removeEventListener('pointerdown', this.onDown);
     window.removeEventListener('pointermove', this.onMove);
     window.removeEventListener('pointerup', this.onUp);
     el.removeEventListener('dblclick', this.onDbl);
-    this.scene.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.geometry) m.geometry.dispose();
-      const mat = m.material as THREE.Material | THREE.Material[] | undefined;
-      if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
-      else mat?.dispose();
-    });
-    Object.values(this.photoReady).forEach((p) => p && [p.map, p.rough, p.geo].forEach((x) => x.dispose()));
+    const free = (root: THREE.Object3D) =>
+      root.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.geometry) m.geometry.dispose();
+        const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
+        else mat?.dispose();
+      });
+    if (this.activeModel) this.showModel(null);
+    free(this.scene);
+    this.models.forEach((p) => p.then((e) => e && this.freeModel(e)));
     Object.values(this.texCache).forEach(({ d, c }) => [d.map, d.bump, d.rough, c.map, c.bump].forEach((t) => t.dispose()));
+    Object.values(this.crumbCache).forEach((c) => [c.map, c.bump].forEach((t) => t.dispose()));
     this.renderer.dispose();
     el.remove();
   }
@@ -386,7 +365,6 @@ export class CookieScene {
     if (!this.texCache[id]) this.texCache[id] = { d: doughTextures(F, S), c: crumbTextures(F, 512) };
     const { d, c } = this.texCache[id];
     this.bodies.forEach((b) => {
-      b.geometry = this.baseBodyGeo;
       const m = b.material as THREE.MeshPhysicalMaterial;
       m.map = d.map;
       m.bumpMap = d.bump;
@@ -438,46 +416,139 @@ export class CookieScene {
     }
   }
 
+  private crumbFor(id: string) {
+    return (this.crumbCache[id] ??= crumbTextures(LOOKS[id] ?? LOOKS['choco-chips'], 512));
+  }
+
   private loadModel(id: string, url: string) {
-    if (!this.models[id]) {
-      this.models[id] = new GLTFLoader()
-        .loadAsync(url)
-        .then((gltf) => {
-          const root = gltf.scene;
-          const box = new THREE.Box3().setFromObject(root);
-          const size = box.getSize(new THREE.Vector3());
-          const center = box.getCenter(new THREE.Vector3());
-          const k = 2 / Math.max(size.x, size.z, 1e-6);
-          const wrap = new THREE.Group();
-          root.position.set(-center.x, -box.min.y, -center.z);
-          wrap.add(root);
-          wrap.scale.setScalar(k);
-          wrap.position.y = BOTTOM_Y;
-          root.traverse((o) => {
-            const m = o as THREE.Mesh;
-            if (m.isMesh) m.castShadow = m.receiveShadow = true;
-          });
-          let left: THREE.Object3D | null = null, right: THREE.Object3D | null = null;
-          root.traverse((o) => {
-            if (!left && LEFT_RE.test(o.name)) left = o;
-            else if (!right && RIGHT_RE.test(o.name)) right = o;
-          });
-          [left, right].forEach((o) => {
-            const n = o as THREE.Object3D | null;
-            if (n) n.userData.home = { p: n.position.clone(), r: n.rotation.clone() };
-          });
-          return { root: wrap, left, right } as ModelEntry;
-        })
-        .catch(() => null);
+    let p = this.models.get(id);
+    if (p) {
+      // Most recently used goes to the back of the eviction queue.
+      this.models.delete(id);
+      this.models.set(id, p);
+      return p;
     }
-    return this.models[id];
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    p = loader
+      .loadAsync(url)
+      .then((gltf) => {
+        if (this.disposed) return null;
+        const root = gltf.scene;
+        root.updateMatrixWorld(true);
+        const meshes: THREE.Mesh[] = [];
+        root.traverse((o) => {
+          if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+        });
+        if (!meshes.length) return null;
+        // Normalise on the cookie body (the largest mesh) so toppings that overhang don't shrink it.
+        const body = meshes.reduce((a, b) => (b.geometry.attributes.position.count > a.geometry.attributes.position.count ? b : a));
+        const box = new THREE.Box3().setFromObject(body, true);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const k = 2 / Math.max(size.x, size.z, 1e-6);
+        const norm = new THREE.Matrix4().makeScale(k, k, k).premultiply(new THREE.Matrix4().makeTranslation(0, BOTTOM_Y, 0));
+        norm.multiply(new THREE.Matrix4().makeTranslation(-center.x, -box.min.y, -center.z));
+        const halves = [-1, 1].map((side) => {
+          const g = new THREE.Group();
+          g.userData.side = side;
+          return g;
+        }) as [THREE.Group, THREE.Group];
+        const crumb = this.crumbFor(id);
+        const capMat = new THREE.MeshPhysicalMaterial({
+          map: crumb.map, bumpMap: crumb.bump, bumpScale: 4, roughness: 0.95, side: THREE.DoubleSide,
+          stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc,
+          stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp,
+        });
+        const capGeo = buildCap(BOTTOM_Y + size.y * k);
+        const geos = meshes.map((m) => {
+          const geo = m.geometry.clone();
+          geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(norm, m.matrixWorld));
+          return geo;
+        });
+        const caps: THREE.Mesh[] = [];
+        halves.forEach((h, hi) => {
+          const side = h.userData.side as number;
+          const back = stencilPass(side, THREE.BackSide, THREE.IncrementWrapStencilOp);
+          const front = stencilPass(side, THREE.FrontSide, THREE.DecrementWrapStencilOp);
+          meshes.forEach((m, mi) => {
+            const geo = geos[mi];
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            const own = mats.map((mt) => {
+              const c = mt.clone();
+              c.side = THREE.DoubleSide;
+              return seamMaterial(c, side);
+            });
+            const mesh = new THREE.Mesh(geo, Array.isArray(m.material) ? own : own[0]);
+            mesh.customDepthMaterial = seamMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), side);
+            mesh.castShadow = mesh.receiveShadow = true;
+            const sb = new THREE.Mesh(geo, back), sf = new THREE.Mesh(geo, front);
+            sb.renderOrder = sf.renderOrder = 10 + hi * 2;
+            sb.frustumCulled = sf.frustumCulled = false;
+            h.add(mesh, sb, sf);
+          });
+          const cap = new THREE.Mesh(capGeo, capMat);
+          cap.renderOrder = 11 + hi * 2;
+          cap.receiveShadow = true;
+          cap.visible = false;
+          h.add(cap);
+          caps.push(cap);
+        });
+        meshes.forEach((m) => {
+          m.geometry.dispose();
+          (Array.isArray(m.material) ? m.material : [m.material]).forEach((x) => x.dispose());
+        });
+        return { halves, caps } as ModelEntry;
+      })
+      .catch(() => null);
+    this.models.set(id, p);
+    while (this.models.size > MODEL_CACHE) {
+      const [oldId, old] = this.models.entries().next().value!;
+      this.models.delete(oldId);
+      old.then((e) => e && e !== this.activeModel && this.freeModel(e));
+    }
+    return p;
+  }
+
+  /** Frees a model's GPU memory. Crumb textures are shared per flavour and kept. */
+  private freeModel(e: ModelEntry) {
+    const keep = new Set<unknown>(Object.values(this.crumbCache).flatMap((c) => [c.map, c.bump]));
+    const seen = new Set<unknown>();
+    e.halves.forEach((h) =>
+      h.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        if (!seen.has(m.geometry)) {
+          seen.add(m.geometry);
+          m.geometry.dispose();
+        }
+        (Array.isArray(m.material) ? m.material : [m.material]).forEach((mt) => {
+          if (seen.has(mt)) return;
+          seen.add(mt);
+          Object.values(mt).forEach((v) => {
+            if (v instanceof THREE.Texture && !keep.has(v) && !seen.has(v)) {
+              seen.add(v);
+              v.dispose();
+            }
+          });
+          mt.dispose();
+        });
+      }),
+    );
   }
 
   private showModel(entry: ModelEntry | null) {
-    if (this.activeModel) this.cookie.remove(this.activeModel.root);
+    const prev = this.activeModel;
+    if (prev) {
+      prev.halves.forEach((h, i) => this.halves[i].remove(h));
+      // Evicted from the cache while it was on screen: free it now that it's gone.
+      const cached = [...this.models.values()];
+      if (prev !== entry) Promise.all(cached).then((list) => !list.includes(prev) && this.freeModel(prev));
+    }
     this.activeModel = entry;
-    this.halves.forEach((h) => (h.visible = !entry));
-    if (entry) this.cookie.add(entry.root);
+    this.showingProcedural = !entry;
+    this.bodies.forEach((b) => (b.visible = !entry));
+    this.chipGroups.forEach((g) => (g.visible = !entry));
+    if (entry) entry.halves.forEach((h, i) => this.halves[i].add(h));
   }
 
   private updateCrumbs(t: number) {
@@ -498,7 +569,7 @@ export class CookieScene {
   }
 
   private updateStrands(b: number) {
-    const molten = !!this.look.molten && !this.activeModel;
+    const molten = !!this.look.molten;
     this.strands.forEach((m, i) => {
       const s = this.strandSeeds[i];
       if (!molten || b <= 0.02 || b > s.snap) {
@@ -516,14 +587,28 @@ export class CookieScene {
   }
 
   private frame = (now: number) => {
-    if (this.disposed) return;
+    if (this.disposed || !this.visible) return;
     const st = this.st;
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     st.sx += (st.px - st.sx) * 0.06;
     st.sy += (st.py - st.sy) * 0.06;
     if (!st.dragging && !st.reduced) st.rotY += dt * 0.18;
-    st.spin *= 0.92;
+    st.spin *= Math.pow(0.03, dt);
+    // Swap animation: shrink the old cookie out, apply the pending one, then grow and spin it in.
+    if (st.show !== st.showTarget) {
+      st.show = st.reduced ? st.showTarget : Math.min(1, Math.max(0, st.show + Math.sign(st.showTarget - st.show) * dt * (st.showTarget ? 2.2 : 5)));
+      if (st.show === 0 && this.pending) {
+        this.pending();
+        this.pending = null;
+        st.b = 0;
+        st.spin = -Math.PI * 0.8;
+        st.showTarget = 1;
+      }
+    }
+    this.cookie.visible = st.show > 0;
+    const se = 1 - Math.pow(1 - st.show, 3);
+    this.cookie.scale.setScalar(0.5 + 0.5 * se);
     const k = st.breakTarget > st.b ? 0.9 : 1.6;
     st.b = Math.min(1, Math.max(0, st.b + Math.sign(st.breakTarget - st.b) * dt * k));
     if (Math.abs(st.breakTarget - st.b) < 0.01) st.b = st.breakTarget;
@@ -537,27 +622,17 @@ export class CookieScene {
     this.key.position.set(-3 + st.sx * 1.5, 5, 2.5);
 
     const be = 1 - Math.pow(1 - b, 3);
-    this.faces.forEach((f) => (f.visible = b > 0.002));
+    this.faces.forEach((f) => (f.visible = this.showingProcedural && b > 0.002));
+    this.activeModel?.caps.forEach((c) => (c.visible = b > 0.002));
     this.halves.forEach((h) => {
       const s = h.userData.side as number;
       h.position.set(s * be * 0.42, be * 0.06, 0);
       h.rotation.set(0, -s * be * 0.22, -s * be * 0.32);
     });
-    const m = this.activeModel;
-    if (m) {
-      const parts: [THREE.Object3D | null, number][] = [[m.left, -1], [m.right, 1]];
-      const inv = 1 / m.root.scale.x;
-      parts.forEach(([o, s]) => {
-        if (!o) return;
-        const home = o.userData.home as { p: THREE.Vector3; r: THREE.Euler };
-        o.position.set(home.p.x + s * be * 0.42 * inv, home.p.y + be * 0.06 * inv, home.p.z);
-        o.rotation.set(home.r.x, home.r.y - s * be * 0.22, home.r.z - s * be * 0.32);
-      });
-      if (!m.left || !m.right) m.root.rotation.z = Math.sin(be * Math.PI) * 0.08;
-    }
     this.cookie.updateMatrixWorld(true);
+    this.crumbs.visible = this.shards.visible = this.cookie.visible && b > 0.002;
     this.updateCrumbs(b * 1.15);
-    this.updateStrands(b);
+    this.updateStrands(this.cookie.visible ? b : 0);
     this.renderer.render(this.scene, this.camera);
     this.raf = requestAnimationFrame(this.frame);
   };
