@@ -26,7 +26,7 @@ export const CartDrawer = () => {
   if (!drawerOpen) return null;
 
   const inCart = cart.map((l) => l.pid);
-  const recs = P.filter((p) => p.status === 'available' && !inCart.includes(p.id) && !p.custom && !p.flavourPick && p.featured).slice(0, 2);
+  const recs = P.filter((p) => p.status === 'available' && !inCart.includes(p.id) && !p.custom && !p.flavourPick && !p.pickFlavours && !p.boxOf && p.featured).slice(0, 2);
 
   const close = () => setDrawerOpen(false);
   const toCheckout = () => {

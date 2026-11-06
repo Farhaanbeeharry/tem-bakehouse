@@ -45,6 +45,8 @@ export type Product = {
   fillings?: boolean;
   /** Customer picks this many cookies, any mix of flavours. */
   boxOf?: number;
+  /** Customer picks this many different flavours for the pack. */
+  pickFlavours?: number;
   packs: Pack[];
 };
 
@@ -99,18 +101,17 @@ const roundProducts: Product[] = flavours.map((f) => ({
   packs: [
     { id: 'p1', label: 'Single', qty: 1, mult: 1 },
     { id: 'p4', label: 'Box of 4', qty: 4, mult: 4 },
-    { id: 'p6', label: 'Box of 6', qty: 6, mult: 6 },
   ],
 }));
 
 export const products: Product[] = [
   ...roundProducts,
   { id: 'build-box', cat: 'box', flavour: 'choco-chips', name: 'Build Your Box', status: 'available', diet: 'both', desc: 'Choose any four cookies — one of each, or four of your favourite.', price: 95, boxOf: 4, packs: [{ id: 'b4', label: 'Box of 4', qty: 4, mult: 4 }] },
-  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Choose one flavour per box.', price: 350, flavourPick: true, packs: [{ id: 'm12', label: '12 minis', qty: 12, mult: 1 }, { id: 'm24', label: '24 minis', qty: 24, mult: 1.9 }] },
-  { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'A cookie baked into a cup shape and filled with your choice of filling.', price: 120, flavourPick: true, fillings: true, packs: [{ id: 'c1', label: 'Single', qty: 1, mult: 1 }, { id: 'c6', label: 'Set of 6', qty: 6, mult: 6 }] },
-  { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'One giant cookie, personalised with your message. Ideal for an occasion.', price: 1200, flavourPick: true, custom: true, packs: [{ id: 's', label: '20 cm', qty: 1, mult: 1 }, { id: 'l', label: '28 cm', qty: 1, mult: 1.6 }] },
-  { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'regular', desc: 'Long cookie sticks, made for dipping.', price: 250, flavourPick: true, packs: [{ id: 'k8', label: 'Pack of 8', qty: 8, mult: 1 }] },
-  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Cookie shaped into a small glass, ready to be filled.', price: 300, flavourPick: true, fillings: true, packs: [{ id: 'h4', label: 'Set of 4', qty: 4, mult: 1 }] },
+  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Choose three flavours per box.', price: 350, pickFlavours: 3, packs: [{ id: 'm12', label: '12 minis', qty: 12, mult: 1 }, { id: 'm24', label: '24 minis', qty: 24, mult: 1.9 }] },
+  { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'A cookie baked into a cup shape and filled with your choice of filling.', price: 120, flavourPick: true, fillings: true, packs: [{ id: 'c2', label: 'Set of 2', qty: 2, mult: 2 }, { id: 'c4', label: 'Set of 4', qty: 4, mult: 4 }] },
+  { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'One giant cookie, personalised with your message. Ideal for an occasion.', price: 1200, flavourPick: true, custom: true, packs: [{ id: 's', label: '15 cm', qty: 1, mult: 0.75 }, { id: 'l', label: '20 cm', qty: 1, mult: 1 }] },
+  { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Long cookie sticks, made for dipping.', price: 300, flavourPick: true, packs: [{ id: 'k10', label: 'Pack of 10', qty: 10, mult: 1 }, { id: 'k20', label: 'Pack of 20', qty: 20, mult: 2 }] },
+  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'both', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 300, flavourPick: true, packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 0.5 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1 }] },
 ];
 
 export type StatusId =

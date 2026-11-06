@@ -30,8 +30,10 @@ export const Manifesto = () => {
   return (
     <section ref={ref} data-dark="1" aria-label="The TEM experience" style={{ position: 'relative', height: reduced ? 'auto' : '260vh', background: '#711D2C', color: '#F0EED9' }}>
       <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(24px,4vh,40px)', padding: 'clamp(80px,10vh,120px) clamp(16px,5vw,72px)' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.26em', color: '#E5DCC5' }}>THE TEM EXPERIENCE</div>
-        <p style={{ margin: 0, maxWidth: '24ch', fontWeight: 800, fontStretch: '108%', fontSize: 'clamp(28px,min(4.6vw,7.4vh),80px)', lineHeight: 1.02, letterSpacing: '-0.03em', textWrap: 'balance' }}>
+        <h2 className="display" style={{ margin: 0, fontSize: 'clamp(32px,min(4.4vw,6.5vh),72px)', color: '#F0EED9' }}>
+          The <em style={{ color: '#F1C9C9' }}>TEM Experience.</em>
+        </h2>
+        <p style={{ margin: 0, maxWidth: '24ch', fontWeight: 800, fontStretch: '108%', fontSize: 'clamp(26px,min(4vw,6.2vh),68px)', lineHeight: 1.02, letterSpacing: '-0.03em', textWrap: 'balance' }}>
           {WORDS.map((w, i) => (
             <span
               key={i}

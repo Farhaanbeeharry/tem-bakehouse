@@ -48,12 +48,9 @@ export const FlavourRoom = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 40 }}>
           <div>
             <h2 className="display" style={{ fontSize: 'clamp(36px,5.2vw,88px)' }}>
-              Turn it, break it,
-              <br />
-              crave it &amp;
-              <br />
-              <em style={{ color: '#711D2C' }}>pick yours.</em>
+              The <em style={{ color: '#711D2C' }}>Flavour Room.</em>
             </h2>
+            <p style={{ margin: '14px 0 0', fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(20px,2vw,30px)', lineHeight: 1.2, color: '#3B2519' }}>Turn it… break it… crave it &amp; pick yours.</p>
           </div>
           <p className="lede" style={{ maxWidth: '34ch' }}>
             A real-time 3D cookie you can turn, inspect and break open. Click a flavour to change it.

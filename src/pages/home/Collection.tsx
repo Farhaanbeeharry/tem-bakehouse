@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BoxVisual } from '../../components/BoxVisual';
 import { ImageSlot } from '../../components/ImageSlot';
 import { Cookie } from '../../components/Cookie';
 import { categories } from '../../data/catalog';
@@ -87,6 +88,11 @@ export const Collection = () => {
                   </div>
                 }
               >
+                {c.id === 'box' && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'grid', alignContent: 'end', background: '#711D2C' }}>
+                    <BoxVisual label={c.name} />
+                  </div>
+                )}
                 <span style={{ position: 'absolute', left: 18, top: 14, fontWeight: 900, fontStretch: '120%', fontSize: `calc(${cardW} * 0.32)`, lineHeight: 0.8, letterSpacing: '-0.05em', color: 'transparent', WebkitTextStroke: '1.5px rgba(240,238,217,.55)' }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>

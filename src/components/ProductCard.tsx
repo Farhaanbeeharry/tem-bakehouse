@@ -5,6 +5,7 @@ import { dietLabel, fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
 import { useImageExists } from '../lib/assets';
 import { productPhotoSrc } from './ProductVisual';
+import { BoxVisual } from './BoxVisual';
 
 export const ProductCard = ({ p }: { p: Product }) => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
   const fav = favs.includes(p.id);
   const cat = categories.find((c) => c.id === p.cat);
   const open = () => navigate('/cookies/' + p.id);
-  const needsOptions = p.flavourPick || p.custom || p.fillings || p.boxOf;
+  const needsOptions = p.flavourPick || p.custom || p.fillings || p.boxOf || p.pickFlavours;
   const photo = productPhotoSrc(p.id);
   const hasPhoto = useImageExists(photo);
   // Cheapest pack, so a box of 4 shows what it actually costs rather than the per-cookie base.
@@ -26,7 +27,11 @@ export const ProductCard = ({ p }: { p: Product }) => {
         className="card-tile"
         style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 22, background: soon ? '#EDE3D5' : '#E5DCC5', display: 'grid', placeItems: 'center', cursor: 'pointer', overflow: 'hidden' }}
       >
-        {photo && hasPhoto ? (
+        {p.boxOf ? (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <BoxVisual label={p.name} />
+          </div>
+        ) : photo && hasPhoto ? (
           <img src={photo} alt={p.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
         ) : (
           <div style={{ width: '80%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
