@@ -47,7 +47,6 @@ export const Collection = () => {
       <div style={{ position: flat ? 'relative' : 'sticky', top: 0, height: flat ? 'auto' : '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(16px,3.5vh,40px)', padding: flat ? '96px 0' : '88px 0 16px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 20, flexWrap: 'wrap', padding: '0 var(--gutter)' }}>
           <div>
-            <div className="eyebrow">02 — Our Collection</div>
             <h2 className="display" style={{ fontSize: flat ? 'clamp(40px,6vw,96px)' : 'clamp(36px,min(6vw,8vh),96px)' }}>
               Our
               <br />

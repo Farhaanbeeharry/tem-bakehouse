@@ -15,9 +15,6 @@ export const HowPage = () => {
   const guide = (Object.keys(statuses) as StatusId[]).filter((k) => k !== 'delivered' && k !== 'out_for_delivery');
   return (
     <main className="page" style={{ maxWidth: 1100 }}>
-      <div className="eyebrow" style={{ marginBottom: 12 }}>
-        How to order
-      </div>
       <h1 className="h-page" style={{ marginBottom: 20 }}>
         Six steps from
         <br />

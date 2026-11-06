@@ -33,7 +33,6 @@ export const Moments = () => {
       <div style={{ maxWidth: 1360, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 40 }}>
           <div>
-            <div className="eyebrow">04 — Made for every moment</div>
             <h2 className="display" style={{ fontSize: 'clamp(40px,6vw,96px)' }}>
               What&apos;s the
               <br />
@@ -135,9 +134,6 @@ export const GalleryStrip = () => {
       <div style={{ maxWidth: 1360, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 48 }}>
           <div>
-            <div className="eyebrow" style={{ color: '#C7B593' }}>
-              05 — Gallery
-            </div>
             <h2 className="display" style={{ fontSize: 'clamp(40px,6vw,96px)' }}>
               Fresh from
               <br />

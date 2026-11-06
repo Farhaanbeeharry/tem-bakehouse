@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { resetStore, useStore } from '../lib/store';
+import { useStore } from '../lib/store';
 import { countIn } from './adminData';
 
 const SECTIONS: { path: string; label: string }[] = [
@@ -43,9 +43,6 @@ export const AdminNav = () => {
           Signed in as <strong>Owner</strong>
         </span>
         <Link to="/">View public site →</Link>
-        <button type="button" className="adm-linkbtn" onClick={resetStore}>
-          Reset demo data
-        </button>
       </div>
     </nav>
   );

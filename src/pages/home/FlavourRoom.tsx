@@ -47,7 +47,6 @@ export const FlavourRoom = () => {
       <div style={{ maxWidth: 1360, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 40 }}>
           <div>
-            <div className="eyebrow">01 — The Flavour Room</div>
             <h2 className="display" style={{ fontSize: 'clamp(36px,5.2vw,88px)' }}>
               Turn it, break it,
               <br />

@@ -53,10 +53,7 @@ export const Footer = ({ extraBottom }: { extraBottom: boolean }) => (
         color: '#8A7A6A',
       }}
     >
-      <span>© {new Date().getFullYear()} TEM Bakehouse · Demo build · prices and contact details are placeholders</span>
-      <Link to="/admin" style={{ color: '#C7B593' }}>
-        Admin back office
-      </Link>
+      <span>© {new Date().getFullYear()} TEM Bakehouse</span>
     </div>
   </footer>
 );

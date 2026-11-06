@@ -188,14 +188,6 @@
   line-height: 1;
 }
 
-.adm-proto {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 6px 10px;
-  border: 1px dashed var(--a-burgundy);
-  color: var(--a-burgundy);
-  border-radius: 999px;
-}
 
 .adm-panel {
   padding: 20px;

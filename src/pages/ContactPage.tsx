@@ -55,7 +55,6 @@ export const ContactPage = () => {
               Thank you, {f.name.split(' ')[0] || 'friend'}.
             </strong>
             <span style={{ fontSize: 14, color: '#6E5C4D' }}>TEM will reply by email.</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8A7A6A' }}>DEMO · nothing was sent</span>
           </div>
         ) : (
           <>

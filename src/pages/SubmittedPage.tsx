@@ -101,7 +101,6 @@ export const SubmittedPage = () => {
             Back to home
           </button>
         </div>
-        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8A7A6A' }}>DEMO · no email is sent. In production an acknowledgement email goes to {order.email || user?.email || 'the customer'}.</p>
       </div>
     </main>
   );

@@ -13,10 +13,9 @@ type Props = {
   children?: ReactNode;
 };
 
-/** Shows `src` once the file exists; until then a branded placeholder that names the expected file. */
+/** Shows `src` once the file exists; until then a branded placeholder. */
 export const ImageSlot = ({ src, alt, ratio = '4 / 5', radius = 22, dark = false, fallback, style, children }: Props) => {
   const ok = useImageExists(src);
-  const file = src.split('/').pop();
   return (
     <div
       className={ok ? undefined : dark ? 'striped-dark' : 'striped'}
@@ -27,13 +26,7 @@ export const ImageSlot = ({ src, alt, ratio = '4 / 5', radius = 22, dark = false
       ) : (
         <>
           {fallback && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>{fallback}</div>}
-          <span
-            aria-label={alt}
-            role="img"
-            style={{ position: 'absolute', left: 14, bottom: 12, right: 14, fontFamily: 'var(--font-mono)', fontSize: 9, color: dark ? '#C7B593' : '#6E5C4D', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          >
-            {file}
-          </span>
+          <span role="img" aria-label={alt} />
         </>
       )}
       {children}

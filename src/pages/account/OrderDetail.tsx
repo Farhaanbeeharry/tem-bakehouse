@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ProductVisual } from '../../components/ProductVisual';
 import { StatusBadge } from '../../components/StatusBadge';
 import { customText, lineMeta } from '../../components/CartDrawer';
@@ -7,7 +7,7 @@ import { DONE_STATUSES, flow, flowLabels, statuses, type StatusId } from '../../
 import { whatsappUrl } from '../../data/site';
 import { fmt, isoDay, niceDate, uid } from '../../lib/format';
 import { useShop } from '../../lib/shop';
-import { estimateOf, pushStatus, resetStore, updateOrder, useProducts, useStore, type Order } from '../../lib/store';
+import { estimateOf, pushStatus, updateOrder, useProducts, useStore, type Order } from '../../lib/store';
 
 const IDX: Partial<Record<StatusId, number>> = { pending_review: 0, changes_requested: 0, awaiting_approval: 0, deposit_required: 1, payment_failed: 1, deposit_submitted: 2, confirmed: 3, in_preparation: 4, ready: 5, out_for_delivery: 5, collected: 6, delivered: 6 };
 
@@ -22,7 +22,6 @@ const BANNERS: Partial<Record<StatusId, [string, string, string, string]>> = {
 const h3 = { margin: '0 0 14px', fontSize: 19.2 } as const;
 
 export const OrderDetail = ({ o }: { o: Order }) => {
-  const navigate = useNavigate();
   const { settings } = useStore();
   const P = useProducts();
   const { setCart, setDrawerOpen, showToast } = useShop();
@@ -52,24 +51,6 @@ export const OrderDetail = ({ o }: { o: Order }) => {
         ? (['Deposit not verified.', o.failNote, '#F3DCD8', '#8A2320'] as const)
         : BANNERS[o.status];
   const upd = (fn: (x: Order) => Order) => updateOrder(o.ref, fn);
-
-  const sims: [string, () => void][] = [];
-  if (o.status === 'pending_review') {
-    sims.push(['TEM accepts → request deposit', () => upd((x) => pushStatus({ ...x, total: x.estimate ?? est }, 'deposit_required'))]);
-    sims.push(['TEM proposes a change', () => upd((x) => pushStatus({ ...x, proposal: 'Your date is fully booked. TEM can prepare this order for the following day at the same time, with the same items and price.' }, 'awaiting_approval'))]);
-    sims.push(['TEM declines', () => upd((x) => pushStatus(x, 'declined'))]);
-  }
-  if (o.status === 'deposit_submitted') {
-    sims.push(['TEM verifies deposit', () => upd((x) => pushStatus({ ...x, depositPaid: (x.total ?? 0) / 2 }, 'confirmed'))]);
-    sims.push(['TEM rejects proof', () => upd((x) => pushStatus({ ...x, failNote: "The reference didn't match a received payment. Please check and resubmit." }, 'payment_failed'))]);
-  }
-  if (o.status === 'confirmed') sims.push(['Start preparing', () => upd((x) => pushStatus(x, 'in_preparation'))]);
-  if (o.status === 'in_preparation') sims.push(['Mark ready for collection', () => upd((x) => pushStatus(x, 'ready'))]);
-  if (o.status === 'ready') sims.push(['Record balance & collected', () => upd((x) => pushStatus({ ...x, balancePaid: (x.total ?? 0) - x.depositPaid }, 'collected'))]);
-  if (!sims.length) sims.push(['Reset demo data', () => {
-    resetStore();
-    navigate('/account?tab=orders');
-  }]);
 
   const submitDeposit = () => {
     if (!dep.ref.trim()) return setDep({ ...dep, tried: true });
@@ -269,19 +250,6 @@ export const OrderDetail = ({ o }: { o: Order }) => {
           <a href={whatsappUrl()} target="_blank" rel="noopener" className="btn" style={{ border: '1px solid #C7B593', color: '#1E1310', fontWeight: 600, fontSize: 14 }}>
             Message TEM on WhatsApp
           </a>
-        </div>
-      </div>
-
-      <div style={{ padding: '16px 18px', borderRadius: 16, border: '1.5px dashed #711D2C', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#711D2C' }}>
-          DEMO · simulate the bakery&apos;s side here, or open the <Link to={`/admin/orders?order=${o.ref}`}>admin back office</Link>
-        </span>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {sims.map(([label, run]) => (
-            <button key={label} type="button" className="btn btn-primary btn-sm" onClick={run}>
-              {label}
-            </button>
-          ))}
         </div>
       </div>
     </div>

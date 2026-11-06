@@ -42,9 +42,6 @@ export const Steps = () => {
     <section ref={ref} aria-label="How to order" style={{ position: 'relative', height: pin ? '320vh' : 'auto', background: '#E5DCC5' }}>
       <div style={{ position: pin ? 'sticky' : 'relative', top: 0, minHeight: '100vh', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,420px),1fr))', gap: 'clamp(24px,5vw,80px)', alignItems: 'center', padding: pin ? '96px clamp(16px,5vw,72px) 32px' : '96px clamp(16px,5vw,72px)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div className="eyebrow" style={{ marginBottom: 0 }}>
-            03 — How to Order
-          </div>
           <h2 className="display" style={{ fontSize: pin ? 'clamp(36px,min(5vw,8vh),80px)' : 'clamp(36px,5vw,80px)', lineHeight: 0.88 }}>
             How to <em style={{ color: '#711D2C' }}>order.</em>
           </h2>

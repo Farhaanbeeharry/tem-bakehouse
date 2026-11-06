@@ -52,7 +52,6 @@ export const AccountPage = () => {
   if (!user) {
     return (
       <main className="page page-narrow" style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start' }}>
-        <div className="eyebrow">My account</div>
         <h1 className="h-page">Every order, in one place.</h1>
         <p className="lede" style={{ maxWidth: '44ch' }}>
           Sign in to track your requests, submit deposits and reorder your favourites.
@@ -84,15 +83,12 @@ export const AccountPage = () => {
             Verify your email — we sent a link to <strong>{user.email}</strong>.
           </span>
           <button type="button" className="link-btn" style={{ fontWeight: 700 }} onClick={() => setVerifyBanner(false)}>
-            Mark verified (demo)
+            Dismiss
           </button>
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>
-            My account
-          </div>
           <h1 className="h-page" style={{ fontSize: 'clamp(31px,3.8vw,56px)', lineHeight: 0.9 }}>
             Hello, {user.name.split(' ')[0]}.
           </h1>

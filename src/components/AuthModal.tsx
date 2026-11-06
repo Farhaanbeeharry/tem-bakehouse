@@ -7,7 +7,7 @@ const TITLES: Record<AuthMode, [string, string]> = {
   login: ['Welcome back', 'Sign in'],
   register: ['Create your account', 'Create account & continue'],
   forgot: ['Reset password', 'Send reset link'],
-  sent: ['Check your inbox', 'Open reset link (demo)'],
+  sent: ['Check your inbox', 'Continue'],
   reset: ['Choose a new password', 'Save new password'],
 };
 
@@ -183,9 +183,6 @@ export const AuthModal = () => {
               Continue browsing
             </button>
           </div>
-          <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8A7A6A' }}>
-            DEMO · any valid-looking email and 8+ character password signs you in. No real account is created.
-          </p>
         </form>
       </div>
     </>

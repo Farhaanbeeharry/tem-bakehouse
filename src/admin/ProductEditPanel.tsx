@@ -115,7 +115,7 @@ export const ProductEditPanel = ({ product: p, onSavePrice, onClose }: Props) =>
       </div>
       <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <button type="button" className="adm-btn primary" style={{ padding: '10px 18px' }} onClick={save}>
-          Save (demo)
+          Save
         </button>
         <span className="adm-small">
           Status, featured, visibility and price save live; other fields are illustrative.

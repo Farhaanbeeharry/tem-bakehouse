@@ -41,7 +41,6 @@ const AdminApp = () => {
               {todayText()}
             </span>
           </div>
-          <span className="adm-proto adm-noprint">PROTOTYPE · demo data stored in this browser</span>
         </div>
         <Routes>
           <Route index element={<OverviewView />} />

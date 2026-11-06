@@ -9,9 +9,6 @@ export const AboutPage = () => (
     <section data-dark="1" style={{ padding: 'clamp(120px,14vw,180px) var(--gutter) 80px', background: '#711D2C', color: '#F0EED9' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,420px),1fr))', gap: 48, alignItems: 'end' }}>
         <div>
-          <div className="eyebrow" style={{ color: '#F1C9C9' }}>
-            About
-          </div>
           <h1 className="display" style={{ fontSize: 'clamp(36px,5.1vw,82px)' }}>
             About TEM
             <br />

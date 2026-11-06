@@ -35,9 +35,6 @@ export const MenuPage = () => {
     <main className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 24, flexWrap: 'wrap', marginBottom: 32 }}>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>
-            The menu
-          </div>
           <h1 className="h-page">Our Cookies</h1>
         </div>
         <p className="lede" style={{ maxWidth: '42ch' }}>

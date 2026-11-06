@@ -14,13 +14,12 @@ npm run build      # production build in dist/
 - **Sign-in is simulated.** Any valid-looking email and an 8+ character password works.
 - **Prices are placeholders** (`src/data/catalog.ts`). Admin → Products can override them.
 - **Contact details** (WhatsApp, Instagram, address, hours) go in `src/data/site.ts`, or in Admin → Settings → Store contact.
-- **Reset demo data** in the admin sidebar, or on any finished order in My Account, brings back the seed orders.
 
 ## Suggested demo path
 
 1. Home: scroll the hero (the cookie breaks open), then the Flavour Room. Drag the 3D cookie and press "Break it open".
 2. Our Cookies → Cookie Cake → personalise it → Add to Order Request → Sign in → choose a date and time → Submit.
-3. "Track this request" → use the demo buttons to play the bakery's side, or open `/admin/orders` and accept it there.
+3. "Track this request", then open `/admin/orders` and accept it there.
 4. Back in My Account: pay the deposit, then go to admin to verify it, mark it ready and collected.
 
 ## Adding images and 3D models
