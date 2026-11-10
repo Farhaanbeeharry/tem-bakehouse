@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { heavyAssetsReady } from '../lib/assets';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {
@@ -279,7 +280,7 @@ export class CookieScene {
     this.opts.onLoading?.(true);
     const { hasModel, modelUrl } = this.opts;
     if (!hasModel || !modelUrl) return procedural();
-    hasModel(id).then((ok) => {
+    heavyAssetsReady().then(() => hasModel(id)).then((ok) => {
       if (token !== this.flavourToken || this.disposed) return;
       if (!ok) return procedural();
       this.loadModel(id, modelUrl(id)).then((entry) => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { asset } from '../../lib/assets';
+import { Logo } from '../../components/Logo';
+import { asset, holdHeavyAssets } from '../../lib/assets';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
@@ -25,6 +26,15 @@ const STEP_MS = 1150;
 /** Scroll distance per step while the hero is pinned, in viewport heights. */
 const STEP_VH = 0.6;
 
+/** Only every STRIDE-th exported frame is loaded; the cross-fade in draw() covers the gaps. */
+const STRIDE = 2;
+/** Parallel frame downloads. */
+const LANES = 6;
+/** Longest a step waits for its frames before playing anyway. */
+const WAIT_MS = 4000;
+/** The loader never holds the page longer than this, even if some frames fail. */
+const LOADER_MAX_MS = 45000;
+
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** Events from an open drawer, dialog or menu belong to it, not to the hero. */
@@ -47,14 +57,26 @@ export const Hero = () => {
   const seq = useRef<Seq | null>(null);
   const [ready, setReady] = useState(false);
   const [tick, setTick] = useState(0);
+  // Loader: the page stays covered and still until every hero frame is in.
+  const [progress, setProgress] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const [loaderGone, setLoaderGone] = useState(false);
+  const loadedRef = useRef(false);
+  useEffect(() => {
+    loadedRef.current = loaded;
+    if (!loaded) return;
+    const t = window.setTimeout(() => setLoaderGone(true), 800);
+    return () => window.clearTimeout(t);
+  }, [loaded]);
 
   useEffect(() => {
     const portrait = window.innerWidth < 820 || window.innerHeight > window.innerWidth;
     const device = portrait ? 'mobile' : 'desktop';
-    const N = portrait ? 180 : 240;
+    const N = (portrait ? 180 : 240) / STRIDE;
     const S: Seq = { N, imgs: new Array(N), ok: false };
     seq.current = S;
     let alive = true;
+    const releaseHeavy = holdHeavyAssets();
     const load = (i: number) =>
       new Promise<boolean>((res) => {
         if (S.imgs[i]) return res(true);
@@ -65,25 +87,57 @@ export const Hero = () => {
           res(true);
         };
         im.onerror = () => res(false);
-        im.src = asset.heroFrame(device, i + 1);
+        im.src = asset.heroFrame(device, i * STRIDE + 1);
       });
-    load(0).then(async (ok) => {
-      if (!alive || !ok) return;
-      S.ok = true;
-      setReady(true);
-      const order: number[] = [];
-      [32, 16, 8, 4, 2, 1].forEach((step) => {
-        for (let i = 0; i < N; i += step) if (!order.includes(i)) order.push(i);
-      });
-      for (let k = 0; k < order.length && alive; k += 6) {
-        await Promise.all(order.slice(k, k + 6).map(load));
-        if (alive) setTick((t) => t + 1);
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let finished = false;
+    const finish = () => {
+      if (!alive || finished) return;
+      finished = true;
+      releaseHeavy();
+      setProgress(1);
+      setLoaded(true);
+      setTick((t) => t + 1);
+    };
+    const safety = window.setTimeout(finish, LOADER_MAX_MS);
+    (async () => {
+      const first = await load(0);
+      if (!alive) return;
+      if (first) {
+        S.ok = true;
+        setReady(true);
       }
-    });
+      // Reduced motion shows only the first frame, so there's nothing more to wait for.
+      if (still || !first) return finish();
+      let next = 1, done = 1;
+      const lane = async () => {
+        while (alive && next < N) {
+          await load(next++);
+          done++;
+          if (alive) setProgress(done / N);
+        }
+      };
+      await Promise.all(Array.from({ length: LANES }, lane));
+      finish();
+    })();
     return () => {
       alive = false;
+      releaseHeavy();
+      window.clearTimeout(safety);
     };
   }, []);
+
+  // Hold the page at the top while loading.
+  useEffect(() => {
+    if (loaded) return;
+    const html = document.documentElement;
+    const prev = html.style.overflow;
+    html.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+    return () => {
+      html.style.overflow = prev;
+    };
+  }, [loaded]);
 
   const draw = (p: number) => {
     const S = seq.current, c = canvasRef.current;
@@ -155,19 +209,39 @@ export const Hero = () => {
     return window.scrollY >= top - 2 && window.scrollY <= top + len + 2;
   };
 
+  /** True once every frame between animation positions a and b is loaded. */
+  const framesReady = (a: number, b: number) => {
+    const S = seq.current;
+    if (!S || !S.ok) return false;
+    const lo = Math.floor(Math.min(a, b) * (S.N - 1)), hi = Math.ceil(Math.max(a, b) * (S.N - 1));
+    for (let i = lo; i <= hi; i++) if (!S.imgs[i]) return false;
+    return true;
+  };
+
   /** Plays the sequence to step k, and moves the scroll position with it so the page stays in sync. */
   const goTo = (k: number, moveScroll = true) => {
     const c = ctl.current;
     k = Math.max(0, Math.min(LAST, k));
     const from = c.p, to = STEPS[k];
+    c.step = k;
+    c.busy = true;
+    cancelAnimationFrame(c.raf);
+    // On a slow connection, hold the page until this step's frames are in, so it plays smoothly instead of jumping.
+    const asked = performance.now();
+    const waitThenPlay = () => {
+      if (reduced || framesReady(from, to) || performance.now() - asked > WAIT_MS) play(k, from, to, moveScroll);
+      else c.raf = requestAnimationFrame(waitThenPlay);
+    };
+    waitThenPlay();
+  };
+
+  const play = (k: number, from: number, to: number, moveScroll: boolean) => {
+    const c = ctl.current;
     const { top, len } = pin();
     const sFrom = window.scrollY, sTo = top + (k / LAST) * len;
     const dur = reduced ? 0 : STEP_MS * Math.min(1.5, Math.max(0.75, Math.abs(to - from) / 0.2));
     const t0 = performance.now();
-    c.step = k;
-    c.busy = true;
     c.lockUntil = t0 + dur;
-    cancelAnimationFrame(c.raf);
     const frame = (now: number) => {
       const t = dur ? Math.min(1, (now - t0) / dur) : 1, e = ease(t);
       c.p = from + (to - from) * e;
@@ -188,6 +262,10 @@ export const Hero = () => {
     if (reduced) return;
     const c = ctl.current;
     const onWheel = (e: WheelEvent) => {
+      if (!loadedRef.current) {
+        e.preventDefault();
+        return;
+      }
       if (e.ctrlKey || inOverlay(e.target) || !inHero()) return;
       const dir = Math.sign(e.deltaY);
       if (!dir) return;
@@ -209,12 +287,17 @@ export const Hero = () => {
       c.touchY = e.touches[0].clientY;
     };
     const onTouchMove = (e: TouchEvent) => {
+      if (!loadedRef.current) {
+        e.preventDefault();
+        return;
+      }
       if (inOverlay(e.target) || !inHero()) return;
       const dir = Math.sign(c.touchY - e.touches[0].clientY);
       const next = c.step + dir;
       if (c.busy || (dir && next >= 0 && next <= LAST)) e.preventDefault();
     };
     const onTouchEnd = (e: TouchEvent) => {
+      if (!loadedRef.current) return;
       if (inOverlay(e.target) || !inHero() || c.busy) return;
       const dy = c.touchY - e.changedTouches[0].clientY;
       if (Math.abs(dy) < 30) return;
@@ -222,6 +305,10 @@ export const Hero = () => {
       if (next >= 0 && next <= LAST) goToRef.current(next);
     };
     const onKey = (e: KeyboardEvent) => {
+      if (!loadedRef.current) {
+        if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' ', 'Home', 'End'].includes(e.key)) e.preventDefault();
+        return;
+      }
       if (typing(e.target) || inOverlay(e.target) || document.querySelector('[role="dialog"]') || e.altKey || e.ctrlKey || e.metaKey || !inHero()) return;
       const dir = ['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.shiftKey) ? 1 : ['ArrowUp', 'PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey) ? -1 : 0;
       const next = c.step + dir;
@@ -273,6 +360,26 @@ export const Hero = () => {
   };
 
   return (
+    <>
+    {!loaderGone && (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label={loaded ? 'Loaded' : `Loading, ${Math.round(progress * 100)}%`}
+        style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse 80% 70% at 50% 46%,#8C2A3A 0%,#711D2C 44%,#3A0B14 100%)', color: '#F0EED9', opacity: loaded ? 0 : 1, visibility: loaded ? 'hidden' : 'visible', transition: 'opacity .7s var(--ease), visibility 0s linear .7s' }}
+      >
+        <div style={{ width: 'min(64vw,340px)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
+          <Logo fill="#F0EED9" style={{ width: '62%', animation: 'temFade .8s ease both' }} />
+          <div style={{ width: '100%', height: 2, background: 'rgba(240,238,217,.2)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: '#F0EED9', transformOrigin: 'left', transform: `scaleX(${progress})`, transition: 'transform .25s linear' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.2em', color: '#E5DCC5' }}>
+            <span>PREHEATING THE OVEN</span>
+            <span>{Math.round(progress * 100)}%</span>
+          </div>
+        </div>
+      </div>
+    )}
     <section
       ref={rootRef}
       data-dark="1"
@@ -307,13 +414,6 @@ export const Hero = () => {
               "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
           }}
         />
-        {!ready && (
-          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.2em', color: '#C7B593' }}>
-            <span style={{ width: 56, height: 56, borderRadius: '50%', border: '1px solid rgba(240,238,217,.25)', borderTopColor: '#F0EED9', animation: 'temSpin 1s linear infinite' }} />
-            PREHEATING THE OVEN
-          </div>
-        )}
-
         <div ref={titleRef} style={{ position: 'absolute', left: 'var(--gutter)', right: 'var(--gutter)', bottom: 'clamp(120px,17vh,180px)', zIndex: 3, willChange: 'transform,opacity' }}>
           <div style={{ display: 'flex', gap: 18, alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.26em', color: '#E5DCC5', marginBottom: 18 }}>
             <span>TEM BAKEHOUSE</span>
@@ -388,5 +488,6 @@ export const Hero = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };

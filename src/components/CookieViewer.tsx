@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { asset, probeFile } from '../lib/assets';
+import { asset, heavyAssetsReady, probeFile } from '../lib/assets';
 import { MODEL_FLAVOURS } from '../data/catalog';
 import type { CookieScene } from '../three/CookieScene';
 
@@ -18,7 +18,8 @@ export const CookieViewer = ({ flavour, broken, onBreakChange }: Props) => {
   useEffect(() => {
     let scene: CookieScene | null = null;
     let alive = true;
-    import('../three/CookieScene')
+    heavyAssetsReady()
+      .then(() => import('../three/CookieScene'))
       .then(({ CookieScene: Scene }) => {
         if (!alive || !hostRef.current) return;
         scene = new Scene(hostRef.current, {

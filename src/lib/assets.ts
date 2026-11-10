@@ -59,3 +59,17 @@ export const useImageExists = (src: string | null) => {
   }, [src]);
   return state.src === src ? state.ok : null;
 };
+
+let heavyGate: Promise<void> = Promise.resolve();
+
+/** Holds back heavy downloads (3D models) until the returned release() is called, so the hero frames load first. */
+export const holdHeavyAssets = () => {
+  let release = () => {};
+  heavyGate = new Promise<void>((r) => {
+    release = r;
+  });
+  return release;
+};
+
+/** Resolves when heavy downloads may start. */
+export const heavyAssetsReady = () => heavyGate;
