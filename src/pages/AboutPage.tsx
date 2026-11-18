@@ -2,7 +2,11 @@ import { Link } from 'react-router-dom';
 import { ImageSlot } from '../components/ImageSlot';
 import { asset } from '../lib/assets';
 
-const VALUES = [1, 2, 3, 4, 5];
+const VALUES = [
+  ['Quality', 'Care in every ingredient, from the first measure to the last crumb.'],
+  ['Distinctiveness', 'Original creations, something different, made to be remembered.'],
+  ['Simplicity', 'Keeping everything simple, from honest ingredients to a clean look and effortless ordering.'],
+];
 
 export const AboutPage = () => (
   <main>
@@ -15,12 +19,9 @@ export const AboutPage = () => (
             <em>Bakehouse</em>
           </h1>
         </div>
-        <div style={{ padding: 20, border: '1.5px dashed rgba(245,238,227,0.4)', borderRadius: 18, fontSize: 16, lineHeight: 1.6, color: '#E5DCC5' }}>
-          <span className="placeholder-tag" style={{ color: '#F1C9C9' }}>
-            TO BE SUPPLIED BY TEM · BRAND INTRODUCTION
-          </span>
-          <br />A two to three sentence introduction to TEM Bakehouse, in the founder&apos;s words.
-        </div>
+        <p style={{ margin: 0, fontSize: 'clamp(17px,1.5vw,20px)', lineHeight: 1.6, color: '#E5DCC5' }}>
+          TEM Bakehouse is more than treats; it is a feeling. Rooted in the belief that the sweetest moments are the ones we share, we bake small-batch cookies and mini bakes made to be gifted, enjoyed and remembered, a little memory for you to carry through life&apos;s journey.
+        </p>
       </div>
     </section>
     <section style={{ padding: 'clamp(72px,10vw,120px) var(--gutter)' }}>
@@ -30,11 +31,17 @@ export const AboutPage = () => (
           <h2 className="h-page" style={{ fontSize: 'clamp(25.6px,3.2vw,46px)', lineHeight: 0.95 }}>
             The baker
           </h2>
-          <div className="placeholder-box">
-            <span className="placeholder-tag">TO BE SUPPLIED BY TEM · FOUNDER STORY</span>
-            <br />
-            How TEM started, why cookies, and what the baker cares about — written and approved by TEM Bakehouse.
-          </div>
+          <p style={{ margin: 0, fontSize: 17, lineHeight: 1.7, color: '#3B2519' }}>
+            TEM Bakehouse began in 2023 with a simple love of baking and a hope of making treats people would remember long after the last bite.
+          </p>
+          <blockquote style={{ margin: 0, paddingLeft: 20, borderLeft: '2px solid #711D2C', display: 'flex', flexDirection: 'column', gap: 14, fontSize: 17, lineHeight: 1.7, color: '#3B2519', fontStyle: 'italic' }}>
+            <p style={{ margin: 0 }}>
+              I believe a cookie is a small thing that can make a big moment. It&apos;s easy to share, easy to gift and easy to enjoy. Each cookie is baked in small batches with care and love, in both regular and gluten-free versions, so that everyone has a place at the table.
+            </p>
+            <p style={{ margin: 0 }}>
+              I care about quality that begins with every ingredient and simplicity that lives in every bite. But what matters most is the moment: the feeling, the memory and the warmth that you and your people carry with you long after the last crumb.
+            </p>
+          </blockquote>
         </div>
       </div>
     </section>
@@ -58,12 +65,14 @@ export const AboutPage = () => (
         <h2 className="h-page" style={{ marginBottom: 28, fontSize: 'clamp(25.6px,3.2vw,46px)' }}>
           What TEM values
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,210px),1fr))', gap: 14 }}>
-          {VALUES.map((n) => (
-            <div key={n} style={{ padding: 24, border: '1.5px dashed #C7B593', borderRadius: 20, minHeight: 180, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span className="placeholder-tag">VALUE 0{n} · TO BE SUPPLIED</span>
-              <strong className="h-card">Value title</strong>
-              <span style={{ fontSize: 14, color: '#6E5C4D' }}>One sentence from TEM.</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,260px),1fr))', gap: 14 }}>
+          {VALUES.map(([title, text], i) => (
+            <div key={title} style={{ padding: 24, border: '1px solid #D9CDB4', background: '#F8F6EC', borderRadius: 20, minHeight: 180, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.2em', color: '#711D2C' }}>0{i + 1}</span>
+              <strong className="h-card" style={{ fontSize: 22 }}>
+                {title}
+              </strong>
+              <span style={{ fontSize: 15, lineHeight: 1.55, color: '#6E5C4D' }}>{text}</span>
             </div>
           ))}
         </div>

@@ -15,7 +15,7 @@ export const COLORS = {
 export type Diet = 'regular' | 'gf' | 'both';
 export type Availability = 'available' | 'soon';
 
-export type Category = { id: string; name: string; short: string; blurb: string };
+export type Category = { id: string; name: string; short: string; blurb: string; /** Has its own page instead of a menu tab. */ hidden?: boolean };
 
 export type Flavour = {
   id: string;
@@ -25,9 +25,25 @@ export type Flavour = {
   dough: string;
   chip: string | null;
   note: string;
+  /** Price of one round cookie (Rs). */
+  price: number;
+  ingredients: string;
+  /** Names from FILLINGS that this flavour can be filled with. */
+  fillings: string[];
 };
 
-export type Pack = { id: string; label: string; qty: number; mult: number };
+/** A priced add-on: round-cookie fillings, cookie-stick dips. */
+export type Extra = { name: string; price: number };
+
+export type Pack = {
+  id: string;
+  label: string;
+  qty: number;
+  /** Pack price = product price × mult (rounded to the rupee). */
+  mult: number;
+  /** Number of different flavours the customer picks for this pack (mini box). */
+  pick?: number;
+};
 
 export type Product = {
   id: string;
@@ -39,45 +55,80 @@ export type Product = {
   desc: string;
   price: number;
   featured?: boolean;
+  hidden?: boolean;
   flavourPick?: boolean;
+  /** Flavours offered when flavourPick is on (defaults to every available flavour). */
+  flavours?: string[];
   custom?: boolean;
-  /** Offers a choice of filling (see FILLINGS). */
+  /** Optional paid filling, limited to what the chosen flavour allows (round cookies). */
   fillings?: boolean;
+  /** Filling that always comes with the product. */
+  fixedFilling?: string;
+  /** Optional paid dip, priced per pack. */
+  dips?: Extra[];
+  /** Dip included in the price; one must be chosen. */
+  dipChoice?: string[];
+  /** Format to choose, e.g. bites or sticks; one must be chosen. */
+  styles?: string[];
   /** Customer picks this many cookies, any mix of flavours. */
   boxOf?: number;
-  /** Customer picks this many different flavours for the pack. */
-  pickFlavours?: number;
+  /** Fixed contents of a curated box. */
+  contents?: string[];
+  /** Box price = this fee + the round-cookie price of each cookie chosen. */
+  boxFee?: number;
+  /** Shown under the pack sizes, e.g. other sizes on request. */
+  packNote?: string;
+  /** Overrides the flavour's ingredient list. */
+  ingredients?: string;
+  /** Replaces the reheat instructions in Cookie care. */
+  care?: string;
   packs: Pack[];
 };
 
-export const FILLINGS = ['Nutella', 'Pistachio Cream', 'Cream Cheese', 'Biscoff Spread'];
+export const FILLINGS: Extra[] = [
+  { name: 'Nutella', price: 10 },
+  { name: 'Pistachio Spread', price: 15 },
+  { name: 'Cream Cheese', price: 15 },
+  { name: 'Biscoff Spread', price: 17 },
+  { name: 'Bueno Spread', price: 17 },
+];
 
 /** Collection points offered at checkout. */
 export const COLLECTION_POINTS = ['Terre Rouge', 'Port Louis'];
 
+/** Shown on product pages and in the order request. */
+export const PACKAGING_NOTE =
+  'Your cookies arrive beautifully packaged, and the packaging is already included in the price. Personalised touches and packaging are available on request, with an additional cost.';
+
 export const categories: Category[] = [
-  { id: 'round', name: 'Round Cookies', short: 'Round', blurb: 'The classic. Thick, generous, one flavour each.' },
-  { id: 'box', name: 'Build Your Box', short: 'Box', blurb: 'Four cookies, any mix of flavours you like.' },
-  { id: 'mini', name: 'Mini Cookies', short: 'Mini', blurb: 'Small bites, made for sharing.' },
-  { id: 'cups', name: 'Cookie Cups', short: 'Cups', blurb: 'Cookie dough baked into a cup and filled.' },
+  { id: 'round', name: 'Round Cookies', short: 'Round', blurb: 'The classic: thick, generous and baked in your flavour.' },
+  { id: 'box', name: 'Build Your Box', short: 'Box', blurb: 'Pick four, mix freely, and make it yours.' },
+  { id: 'grande', name: 'The Grande Cookie', short: 'Grande', blurb: 'Nine centimetres, thick and chewy: made to break in half and share.' },
+  { id: 'mini', name: 'Mini Cookies', short: 'Mini', blurb: 'Small in size, warm in feeling, and made to be shared.' },
+  { id: 'cups', name: 'Cookie Cups', short: 'Cups', blurb: 'One hand, one dip, one memorable moment: cookie sticks or bites, made to stand out.' },
   { id: 'cakes', name: 'Cookie Cakes', short: 'Cakes', blurb: 'One giant cookie, personalised for the occasion.' },
-  { id: 'sticks', name: 'Cookie Sticks', short: 'Sticks', blurb: 'Long, dippable, easy to hold.' },
-  { id: 'shots', name: 'Cookie Shots', short: 'Shots', blurb: 'A cookie glass, ready to be filled.' },
+  { id: 'sticks', name: 'Cookie Sticks', short: 'Sticks', blurb: 'Long, dippable, easy to hold, easy to share.' },
+  { id: 'shots', name: 'Cookie Shots', short: 'Shots', blurb: 'Fill it, sip it, savour it: a cookie shot for moments that linger.' },
+  { id: 'collection', name: 'The Cookie Collection', short: 'Collection', blurb: 'Five signature flavours, one box worth sharing.', hidden: true },
 ];
 
-// 'both' = also available gluten-free (confirmed by TEM: Choco Chips, Plain, Pinky, Nutty Crunch, Pistachio)
+const BASE = 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt';
+const ALL_FILLINGS = FILLINGS.map((f) => f.name);
+
+// 'both' = also available gluten-free (confirmed by TEM: Choco Chip, The Original, Pinky, Nutty Crunch, Pistachio)
 export const flavours: Flavour[] = [
-  { id: 'choco-chips', name: 'Choco Chips', status: 'available', diet: 'both', dough: '#C68B52', chip: '#3A2116', note: 'Golden dough, generous chocolate chips.' },
-  { id: 'double-choco', name: 'Double Choco', status: 'available', diet: 'regular', dough: '#5B3524', chip: '#1F100A', note: 'Chocolate dough, more chocolate inside.' },
-  { id: 'red-velvet', name: 'Red Velvet', status: 'available', diet: 'regular', dough: '#8A2A2D', chip: '#F1E8D8', note: 'Deep red crumb with pale chips.' },
-  { id: 'pistachio', name: 'Pistachio', status: 'available', diet: 'both', dough: '#C7AE78', chip: '#7D984C', note: 'Nutty, green-flecked, buttery.' },
-  { id: 'bueno', name: 'Bueno', status: 'available', diet: 'regular', dough: '#CF9E67', chip: '#6A4128', note: 'Hazelnut cream and wafer notes.' },
-  { id: 'ferrero', name: 'Ferrero', status: 'available', diet: 'regular', dough: '#A77346', chip: '#4A2A17', note: 'Hazelnut and chocolate, rich and dark.' },
-  { id: 'plain', name: 'Plain', status: 'available', diet: 'both', dough: '#D8AD73', chip: null, note: 'Simple, buttery, golden.' },
-  { id: 'pinky', name: 'Pinky', status: 'available', diet: 'both', dough: '#DDA7A2', chip: '#F6EEE4', note: 'Soft blush dough, pale chips.' },
-  { id: 'nutty-crunch', name: 'Nutty Crunch', status: 'available', diet: 'both', dough: '#B8834F', chip: '#7A5131', note: 'Crunchy nut pieces throughout.' },
-  { id: 'salted-caramel', name: 'Salted Caramel', status: 'available', diet: 'regular', dough: '#C58B4D', chip: '#E9C68B', note: 'Buttery caramel with a pinch of salt.' },
-  { id: 'biscoff', name: 'Biscoff', status: 'available', diet: 'regular', dough: '#B37340', chip: '#8A4E25', note: 'Spiced caramelised biscuit.' },
+  { id: 'plain', name: 'The Original', status: 'available', diet: 'both', dough: '#D8AD73', chip: null, price: 95, note: 'Where it all began, with a gentle biscuit bite and a tender centre.', ingredients: `${BASE} and flour.`, fillings: ALL_FILLINGS },
+  { id: 'pinky', name: 'Pinky', status: 'available', diet: 'both', dough: '#DDA7A2', chip: '#F6EEE4', price: 100, note: 'The perfect crunch with less sugar.', ingredients: `${BASE}, nuts and flour.`, fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'choco-chips', name: 'Choco Chip', status: 'available', diet: 'both', dough: '#C68B52', chip: '#3A2116', price: 130, note: 'Timeless comfort — the one you already know, and love anyway.', ingredients: `${BASE}, flour, milk chocolate chips and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'double-choco', name: 'Double Choco', status: 'available', diet: 'regular', dough: '#5B3524', chip: '#1F100A', price: 135, note: 'Chocolate doubled down, no apologies.', ingredients: `${BASE}, flour, cocoa powder and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'nutty-crunch', name: 'Nutty Crunch', status: 'available', diet: 'both', dough: '#B8834F', chip: '#7A5131', price: 140, note: 'Every bite snaps with a little wild crunch.', ingredients: `${BASE}, flour, almonds, cashews and pistachio chunks.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'red-velvet', name: 'Red Velvet', status: 'available', diet: 'regular', dough: '#8A2A2D', chip: '#F1E8D8', price: 155, note: 'Soft blush of sweetness wrapped in velvet.', ingredients: 'Butter, caster sugar, brown sugar, cream cheese, eggs, vanilla extract, salt, flour and white chocolate chips.', fillings: ['Cream Cheese'] },
+  { id: 'pistachio', name: 'Pistachio', status: 'available', diet: 'both', dough: '#C7AE78', chip: '#7D984C', price: 160, note: 'Green, nutty & quietly luxurious.', ingredients: 'Butter, caster sugar, brown sugar, pistachio cream, pistachio paste, eggs, vanilla extract, salt, green food colouring, flour and pistachio chunks.', fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'ferrero', name: 'Praline Dream', status: 'available', diet: 'regular', dough: '#A77346', chip: '#4A2A17', price: 170, note: 'The flavour you know, in a cookie you won’t forget.', ingredients: 'Butter, caster sugar, brown sugar, rocher cream, Ferrero Rocher chocolate, eggs, vanilla extract, salt and flour.', fillings: ['Nutella', 'Bueno Spread'] },
+  { id: 'bueno', name: 'Bueno', status: 'available', diet: 'regular', dough: '#CF9E67', chip: '#6A4128', price: 170, note: 'Creamy, crunchy and impossible to stop at one.', ingredients: 'Butter, caster sugar, brown sugar, bueno cream, Kinder Bueno chocolate, eggs, vanilla extract, salt and flour.', fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  // Upcoming: no price from TEM yet. The price stays hidden while the flavour is "coming soon".
+  { id: 'salted-caramel', name: 'Salted Caramel', status: 'soon', diet: 'regular', dough: '#C58B4D', chip: '#E9C68B', price: 170, note: 'The sweet-and-salty comfort you’ll think about long after the last crumb.', ingredients: 'Coming soon.', fillings: [] },
+  { id: 'biscoff', name: 'Biscoff', status: 'soon', diet: 'regular', dough: '#B37340', chip: '#8A4E25', price: 170, note: 'Spiced caramel cookie with a creamy centre.', ingredients: 'Coming soon.', fillings: [] },
 ];
 
 export const flavourById: Record<string, Flavour> = Object.fromEntries(flavours.map((f) => [f.id, f]));
@@ -87,7 +138,12 @@ export const FEATURED_FLAVOURS = flavours.map((f) => f.id);
 /** Flavours with a real 3D model in /public/models. */
 export const MODEL_FLAVOURS = flavours.map((f) => f.id);
 
-// Prices are PLACEHOLDERS (Rs) — not supplied by client
+const VARIES = 'Ingredients vary depending on the flavour you choose. Refer to the single-flavour round cookies for the full ingredients list.';
+const CLASSIC_FOUR = ['choco-chips', 'plain', 'pistachio', 'double-choco'];
+
+/** The Cookie Collection: First Edition. */
+export const COLLECTION_FLAVOURS = ['choco-chips', 'double-choco', 'pistachio', 'red-velvet', 'nutty-crunch'];
+
 const roundProducts: Product[] = flavours.map((f) => ({
   id: 'round-' + f.id,
   cat: 'round',
@@ -95,9 +151,10 @@ const roundProducts: Product[] = flavours.map((f) => ({
   name: f.name,
   status: f.status,
   diet: f.diet,
-  desc: f.note + ' A thick round cookie, baked to order.',
-  price: 95,
+  desc: f.note,
+  price: f.price,
   featured: FEATURED_FLAVOURS.includes(f.id),
+  fillings: f.fillings.length > 0,
   packs: [
     { id: 'p1', label: 'Single', qty: 1, mult: 1 },
     { id: 'p4', label: 'Box of 4', qty: 4, mult: 4 },
@@ -106,13 +163,44 @@ const roundProducts: Product[] = flavours.map((f) => ({
 
 export const products: Product[] = [
   ...roundProducts,
-  { id: 'build-box', cat: 'box', flavour: 'choco-chips', name: 'Build Your Box', status: 'available', diet: 'both', desc: 'Choose any four cookies — one of each, or four of your favourite.', price: 95, boxOf: 4, packs: [{ id: 'b4', label: 'Box of 4', qty: 4, mult: 4 }] },
-  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Choose three flavours per box.', price: 350, pickFlavours: 3, packs: [{ id: 'm12', label: '12 minis', qty: 12, mult: 1 }, { id: 'm24', label: '24 minis', qty: 24, mult: 1.9 }] },
-  { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'A cookie baked into a cup shape and filled with your choice of filling.', price: 120, flavourPick: true, fillings: true, packs: [{ id: 'c2', label: 'Set of 2', qty: 2, mult: 2 }, { id: 'c4', label: 'Set of 4', qty: 4, mult: 4 }] },
-  { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'One giant cookie, personalised with your message. Ideal for an occasion.', price: 1200, flavourPick: true, custom: true, packs: [{ id: 's', label: '15 cm', qty: 1, mult: 0.75 }, { id: 'l', label: '20 cm', qty: 1, mult: 1 }] },
-  { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Long cookie sticks, made for dipping.', price: 300, flavourPick: true, packs: [{ id: 'k10', label: 'Pack of 10', qty: 10, mult: 1 }, { id: 'k20', label: 'Pack of 20', qty: 20, mult: 2 }] },
-  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'both', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 300, flavourPick: true, packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 0.5 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1 }] },
+  { id: 'build-box', cat: 'box', flavour: 'choco-chips', name: 'Build Your Box', status: 'available', diet: 'both', desc: 'Pick four, mix freely, and make it yours. Each cookie is priced by its flavour, plus Rs 75 for the box.', price: 75, boxFee: 75, boxOf: 4, ingredients: VARIES, packs: [{ id: 'b4', label: 'Box of 4', qty: 4, mult: 1 }] },
+  { id: 'grande', cat: 'grande', flavour: 'choco-chips', name: 'The Grande Cookie (9 cm)', status: 'available', diet: 'regular', desc: 'At 9 cm, it’s thick, chewy and loaded with chocolate chips, the kind of cookie you break in half to share, then wish you hadn’t.', price: 275, boxOf: 2, ingredients: VARIES, packs: [{ id: 'g2', label: 'Box of 2', qty: 2, mult: 1 }] },
+  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Small enough to enjoy one after another.', price: 350, ingredients: VARIES, packs: [{ id: 'm12', label: 'Box of 12', qty: 12, mult: 1, pick: 3 }, { id: 'm16', label: 'Box of 16', qty: 16, mult: 16 / 12, pick: 4 }] },
+  { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'Cookie bites or sticks, easy to hold in one hand and made to stand out: one dip, one memorable moment.', price: 300, flavourPick: true, flavours: CLASSIC_FOUR, styles: ['Cookie Bites', 'Cookie Sticks'], dipChoice: ['Chocolate Hazelnut Spread', 'Speculoos Spread', 'Velour Spread'], ingredients: VARIES, packs: [{ id: 'c1', label: 'One size', qty: 1, mult: 1 }] },
+  { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'The cookie you celebrate with, baked for birthdays, gatherings and every moment in between.', price: 1000, flavourPick: true, flavours: ['choco-chips', 'double-choco', 'red-velvet', 'pistachio', 'nutty-crunch', 'plain'], fixedFilling: 'Chocolate Hazelnut Spread', custom: true, ingredients: VARIES, packNote: 'Other sizes available upon request — get in touch.', packs: [{ id: 's', label: '15 cm', qty: 1, mult: 1 }, { id: 'l', label: '20 cm', qty: 1, mult: 1.3 }] },
+  { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Crisp outside, soft within, and reimagined for dipping and easy, one-handed snacking.', price: 325, flavourPick: true, flavours: CLASSIC_FOUR, dips: [{ name: 'Nutella', price: 15 }, { name: 'Bueno Spread', price: 15 }, { name: 'Pistachio Spread', price: 20 }], ingredients: VARIES, packs: [{ id: 'k20', label: 'Box of 20', qty: 20, mult: 1 }, { id: 'k30', label: 'Box of 30', qty: 30, mult: 400 / 325 }] },
+  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 700, flavourPick: true, flavours: ['choco-chips'], ingredients: 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, milk chocolate chips, dark chocolate chips, milk chocolate or dark chocolate-lined.', care: 'Extra care: Refrigerate if not serving immediately. When the moment is right, let it sit at room temperature for 15 minutes, pour your favourite drink and have it your way.', packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 1 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1200 / 700 }] },
+  { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Five signature flavours: Choco Chip, Double Choco, Pistachio, Red Velvet and Nutty Crunch.', price: 1000, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 5', qty: 5, mult: 1 }] },
 ];
+
+/** Flavours a product can be made in. */
+export const productFlavours = (p: Product) => flavours.filter((f) => f.status === 'available' && (!p.flavours || p.flavours.includes(f.id)));
+
+/** Price of one pack, before extras. */
+export const packPrice = (p: Product, pk: Pack) => Math.round(p.price * pk.mult);
+
+export type LineChoice = { filling?: string; dip?: string; box?: string[] };
+
+/**
+ * Price of one line unit: the pack, plus a paid filling (per cookie) or dip (per pack).
+ * Build Your Box adds up the round-cookie price of each cookie chosen, plus the box fee.
+ * `cookiePrice` gives the current round-cookie price of a flavour (admin overrides included).
+ */
+export const unitPrice = (p: Product, pk: Pack, c: LineChoice, cookiePrice: (flavour: string) => number) => {
+  let unit = p.boxFee != null ? p.boxFee + (c.box ?? []).reduce((a, id) => a + cookiePrice(id), 0) : packPrice(p, pk);
+  if (p.fillings && c.filling) unit += (FILLINGS.find((f) => f.name === c.filling)?.price ?? 0) * pk.qty;
+  if (p.dips && c.dip) unit += p.dips.find((d) => d.name === c.dip)?.price ?? 0;
+  return unit;
+};
+
+/** Lowest price a customer can pay for the product, for "from" labels. */
+export const fromPrice = (p: Product, cookiePrice: (flavour: string) => number) => {
+  if (p.boxFee != null && p.boxOf) {
+    const cheapest = Math.min(...flavours.filter((f) => f.status === 'available').map((f) => cookiePrice(f.id)));
+    return p.boxFee + cheapest * p.boxOf;
+  }
+  return Math.min(...p.packs.map((k) => packPrice(p, k)));
+};
 
 export type StatusId =
   | 'pending_review' | 'changes_requested' | 'awaiting_approval' | 'deposit_required' | 'deposit_submitted'

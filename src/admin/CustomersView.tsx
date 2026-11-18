@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { customers } from '../data/catalog';
 import { useStore } from '../lib/store';
 import { niceDate } from '../lib/format';
 import { summaryOf } from './adminData';
@@ -7,7 +6,7 @@ import { StatusBadge } from './StatusBadge';
 import { useOrderDrawer } from './useOrderDrawer';
 
 export const CustomersView = () => {
-  const { orders } = useStore();
+  const { orders, customers } = useStore();
   const { open } = useOrderDrawer();
   const [sel, setSel] = useState<string | null>(null);
 

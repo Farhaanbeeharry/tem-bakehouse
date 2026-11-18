@@ -1,6 +1,7 @@
 import { useStore, type StoreContact } from '../lib/store';
 import { patchSettings } from './adminData';
 import { DraftInput } from './DraftInput';
+import { DesktopAlerts } from './DesktopAlerts';
 
 const NOTIFICATIONS = [
   'New order request',
@@ -141,7 +142,10 @@ export const SettingsView = () => {
             />
           </label>
         ))}
-        <span className="adm-small">Email only. WhatsApp messages are sent manually from order pages.</span>
+        <span className="adm-small">
+          New order requests also ring and show a banner while the back office is open. Emails start once the mail server (SMTP) is connected. WhatsApp messages are sent manually from order pages.
+        </span>
+        <DesktopAlerts />
       </section>
 
       <section className="adm-panel stack" style={{ gap: 10 }}>

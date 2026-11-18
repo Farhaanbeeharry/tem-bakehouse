@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { categories, type Diet, type Product } from '../data/catalog';
+import { categories, packPrice, type Diet, type Product } from '../data/catalog';
+import { fmt } from '../lib/format';
 import { ProductVisual } from '../components/ProductVisual';
 
 type Props = {
@@ -76,7 +77,7 @@ export const ProductEditPanel = ({ product: p, onSavePrice, onClose }: Props) =>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {(p?.packs ?? []).map((k) => (
             <span key={k.id} style={{ padding: '6px 10px', borderRadius: 8, background: 'var(--a-sand)', fontWeight: 500 }}>
-              {k.label} · ×{k.mult}
+              {k.label} · {p ? fmt(packPrice(p, k)) : ''}
             </span>
           ))}
           <span style={{ padding: '6px 10px', borderRadius: 8, border: '1px dashed var(--a-tan)', fontWeight: 500 }}>+ Add</span>

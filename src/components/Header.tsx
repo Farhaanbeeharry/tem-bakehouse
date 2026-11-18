@@ -6,6 +6,7 @@ import { useAccountNav } from '../lib/useAccountNav';
 
 export const NAV_ITEMS = [
   { label: 'Our Cookies', to: '/cookies' },
+  { label: 'Cookie Collection', to: '/cookie-collection' },
   { label: 'How to Order', to: '/how-to-order' },
   { label: 'About', to: '/about' },
   { label: 'Gallery', to: '/gallery' },

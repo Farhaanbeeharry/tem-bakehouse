@@ -9,10 +9,10 @@ import { clamp01, sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
 const MOMENTS = [
   { id: 'birthday', title: 'Birthdays', text: 'A cookie cake with their name on it.', to: '/cookies?cat=cakes', flavour: 'red-velvet' },
-  { id: 'gift', title: 'Gifts', text: 'A box of six says thank you.', to: '/cookies?cat=round', flavour: 'ferrero' },
+  { id: 'gift', title: 'Gifts', text: 'A box of six cookies, one heartfelt thank you.', to: '/cookies?cat=round', flavour: 'ferrero' },
   { id: 'gathering', title: 'Gatherings', text: 'Mini cookies and shots for the table.', to: '/cookies?cat=mini', flavour: 'pistachio' },
   { id: 'treat', title: 'Just because', text: 'One cookie, on an ordinary Tuesday.', to: '/cookies', flavour: 'choco-chips' },
-  { id: 'yours', title: 'Your moment', text: 'Something personal in mind? Tell us and we’ll make it.', to: '/contact', flavour: '' },
+  { id: 'yours', title: 'Your moment', text: 'Something personal in mind? Tell us and we’ll make it for your moment.', to: '/contact', flavour: '' },
 ];
 
 export const Moments = () => {
@@ -87,7 +87,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
     par: 0.12,
     mt: '-8%',
     tiles: [
-      ['3/4', asset.heroFrame('mobile', 1), 'Macro of a TEM Choco Chips cookie'],
+      ['3/4', asset.heroFrame('mobile', 1), 'Macro of a TEM Choco Chip cookie'],
       ['1/1', asset.category('round'), 'A stack of TEM round cookies'],
       ['4/5', asset.moment('treat'), 'A cookie and a coffee by the window'],
       ['1/1', asset.heroFrame('desktop', 96), 'Cookie breaking apart'],
@@ -102,7 +102,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
       ['3/4', asset.heroFrame('mobile', 95), 'Cookie halves with melted chocolate'],
       ['1/1', asset.moment('gift'), 'A gift box of six cookies'],
       ['4/5', asset.category('mini'), 'A box of mini cookies'],
-      ['3/4', asset.heroFrame('mobile', 50), 'Whole Choco Chips cookie'],
+      ['3/4', asset.heroFrame('mobile', 50), 'Whole Choco Chip cookie'],
     ],
   },
   {

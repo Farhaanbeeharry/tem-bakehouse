@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { flavourById, type Product } from '../data/catalog';
+import { flavourById, packPrice, type Product } from '../data/catalog';
 import type { Custom, OrderLine } from './store';
 import { uid } from './format';
+import { clearRecovering, useAuth, type User } from './auth';
 
-export type User = { name: string; email: string; phone: string };
+export type { User };
 export type AuthMode = 'login' | 'register' | 'forgot' | 'sent' | 'reset';
 
-type AddOptions = { pack?: string; qty?: number; diet?: 'regular' | 'gf'; flavour?: string; custom?: Custom | null; filling?: string; box?: string[] };
+type AddOptions = { pack?: string; qty?: number; diet?: 'regular' | 'gf'; flavour?: string; custom?: Custom | null; filling?: string; dip?: string; style?: string; box?: string[]; /** Price of one unit with options; defaults to the pack price. */ unit?: number };
 
 type ShopContextValue = {
   cart: OrderLine[];
@@ -15,7 +16,8 @@ type ShopContextValue = {
   cartCount: number;
   estimate: number;
   user: User | null;
-  setUser: (u: User | null) => void;
+  /** True while Supabase is still restoring the session. */
+  authLoading: boolean;
   /** Checking out without an account. */
   guest: boolean;
   setGuest: (v: boolean) => void;
@@ -54,7 +56,7 @@ const save = (key: string, value: unknown) => {
 
 export const ShopProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCartState] = useState<OrderLine[]>(() => load('tem_cart', []));
-  const [user, setUser] = useState<User | null>(() => load('tem_user', null));
+  const { user, loading: authLoading, recovering } = useAuth();
   const [guest, setGuest] = useState(false);
   const [favs, setFavs] = useState<string[]>(() => load('tem_favs', []));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -65,7 +67,6 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
   const toastTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => save('tem_cart', cart), [cart]);
-  useEffect(() => save('tem_user', user), [user]);
   useEffect(() => save('tem_favs', favs), [favs]);
 
   const setCart = useCallback((fn: (c: OrderLine[]) => OrderLine[]) => setCartState(fn), []);
@@ -79,13 +80,15 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       pid: p.id,
       name: p.name + (p.flavourPick ? ' — ' + flavourById[fl].name : ''),
       ...(o.filling ? { filling: o.filling } : null),
-      ...(o.box ? { box: o.box } : null),
+      ...(o.dip ? { dip: o.dip } : null),
+      ...(o.style ? { style: o.style } : null),
+      ...(o.box ?? p.contents ? { box: o.box ?? p.contents } : null),
       flavour: fl,
       pack: pk.label,
       packId: pk.id,
       qty: o.qty ?? 1,
       diet: o.diet ?? (p.diet === 'gf' ? 'gf' : 'regular'),
-      unit: p.price * pk.mult,
+      unit: o.unit ?? packPrice(p, pk),
       custom: o.custom ?? null,
     };
     setCartState((c) => [...c, line]);
@@ -105,26 +108,31 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       cartCount: cart.reduce((a, l) => a + l.qty, 0),
       estimate: cart.reduce((a, l) => a + l.unit * l.qty, 0),
       user,
-      setUser,
+      authLoading,
       guest,
       setGuest,
       favs,
       toggleFav: (id) => setFavs((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id])),
       drawerOpen,
       setDrawerOpen,
-      auth,
+      // A password-reset link signs the customer in and lands here: ask for the new password.
+      auth: recovering ? 'reset' : auth,
       authPending,
       openAuth: (mode, pending = false) => {
+        clearRecovering();
         setAuth(mode);
         setAuthPending(pending);
       },
-      closeAuth: () => setAuth(null),
+      closeAuth: () => {
+        clearRecovering();
+        setAuth(null);
+      },
       toast,
       showToast,
       verifyBanner,
       setVerifyBanner,
     }),
-    [cart, setCart, addLine, user, guest, favs, drawerOpen, auth, authPending, toast, showToast, verifyBanner],
+    [cart, setCart, addLine, user, authLoading, guest, favs, drawerOpen, auth, recovering, authPending, toast, showToast, verifyBanner],
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

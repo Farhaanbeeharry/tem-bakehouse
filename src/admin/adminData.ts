@@ -1,5 +1,6 @@
-import { customers, statuses, tones, type Customer, type StatusId, type Tone } from '../data/catalog';
-import { estimateOf, setStore, type Order, type Settings } from '../lib/store';
+import { statuses, tones, type Customer, type StatusId, type Tone } from '../data/catalog';
+import { estimateOf, getStore, type Order } from '../lib/store';
+export { patchSettings } from '../lib/store';
 import { fmt } from '../lib/format';
 
 export const CLOSED_STATUSES: StatusId[] = ['declined', 'cancelled', 'expired'];
@@ -15,10 +16,10 @@ export const TONE_COLOR: Record<Tone, string> = {
 };
 
 export const customerOf = (o: Order): Customer =>
-  customers.find((c) => c.id === o.customer) ?? {
+  getStore().customers.find((c) => c.id === o.customer) ?? {
     id: o.customer,
-    name: o.contactName || 'Customer',
-    email: '—',
+    name: (o.contactName || 'Customer') + (o.customer ? '' : ' (guest)'),
+    email: o.email || '—',
     phone: o.phone || '—',
     orders: 0,
   };
@@ -84,6 +85,3 @@ export const SECTION_TITLES: Record<string, string> = {
   content: 'Website content',
   settings: 'Settings',
 };
-
-export const patchSettings = (patch: Partial<Settings>) =>
-  setStore((s) => ({ ...s, settings: { ...s.settings, ...patch } }));

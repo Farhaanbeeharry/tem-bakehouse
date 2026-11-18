@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { StatusBadge } from '../components/StatusBadge';
-import { DEMO_CUSTOMER_ID, DONE_STATUSES, statuses } from '../data/catalog';
+import { DONE_STATUSES, statuses } from '../data/catalog';
+import { saveProfile, signOut } from '../lib/auth';
 import { fmt, niceDate } from '../lib/format';
 import { useShop } from '../lib/shop';
 import { estimateOf, useProducts, useStore, type Order } from '../lib/store';
@@ -44,10 +45,17 @@ export const AccountPage = () => {
   const { ref } = useParams();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, setUser, openAuth, favs, showToast, verifyBanner, setVerifyBanner } = useShop();
-  const { orders } = useStore();
+  const { user, authLoading, openAuth, favs, showToast, verifyBanner, setVerifyBanner } = useShop();
+  const { orders, ready } = useStore();
   const P = useProducts();
   const [profile, setProfile] = useState({ name: user?.name ?? '', phone: user?.phone ?? '' });
+  const [profileFor, setProfileFor] = useState(user?.id);
+  if (user && profileFor !== user.id) {
+    setProfileFor(user.id);
+    setProfile({ name: user.name, phone: user.phone });
+  }
+
+  if (authLoading) return <main className="page page-narrow" style={{ minHeight: '70vh' }} />;
 
   if (!user) {
     return (
@@ -69,7 +77,7 @@ export const AccountPage = () => {
   }
 
   const tab = ref ? 'orders' : (params.get('tab') ?? 'overview');
-  const mine = orders.filter((o) => o.customer === DEMO_CUSTOMER_ID).sort((a, b) => (b.created + b.ref).localeCompare(a.created + a.ref));
+  const mine = orders.filter((o) => o.customer === user.id).sort((a, b) => (b.created + b.ref).localeCompare(a.created + a.ref));
   // Only the signed-in customer's own orders, never someone else's by reference.
   const detail = ref ? mine.find((o) => o.ref === ref) : undefined;
   const active = mine.filter((o) => !DONE_STATUSES.includes(o.status));
@@ -98,8 +106,7 @@ export const AccountPage = () => {
           className="btn btn-sm"
           style={{ border: '1px solid #C7B593', background: 'transparent', color: '#1E1310', fontWeight: 500 }}
           onClick={() => {
-            setUser(null);
-            navigate('/');
+            void signOut().then(() => navigate('/'));
           }}
         >
           Sign out
@@ -125,7 +132,7 @@ export const AccountPage = () => {
       </div>
 
       {ref && detail && <OrderDetail o={detail} />}
-      {ref && !detail && (
+      {ref && !detail && ready && (
         <p className="lede">
           We couldn&apos;t find order {ref}. <Link to="/account?tab=orders">See all orders</Link>
         </p>
@@ -221,9 +228,9 @@ export const AccountPage = () => {
               type="button"
               className="btn btn-primary btn-sm"
               style={{ minHeight: 48 }}
-              onClick={() => {
-                setUser({ ...user, name: profile.name.trim() || user.name, phone: profile.phone });
-                showToast('Profile saved');
+              onClick={async () => {
+                const error = await saveProfile({ name: profile.name.trim() || user.name, phone: profile.phone });
+                showToast(error ? 'Could not save: ' + error : 'Profile saved');
               }}
             >
               Save changes

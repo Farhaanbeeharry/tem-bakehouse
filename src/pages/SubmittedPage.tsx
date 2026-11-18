@@ -4,6 +4,7 @@ import { useShop } from '../lib/shop';
 import { useStore } from '../lib/store';
 import { NotFoundPage } from './NotFoundPage';
 import { DEMO_CUSTOMER_ID } from '../data/catalog';
+import { supabase } from '../lib/supabase';
 
 const rng = (seed: number) => {
   let s = seed >>> 0;
@@ -20,7 +21,9 @@ export const SubmittedPage = () => {
   const navigate = useNavigate();
   const { user } = useShop();
   // Only this visitor's own request; someone else's reference shows nothing about them.
-  const order = useStore().orders.find((o) => o.ref === ref && o.customer === DEMO_CUSTOMER_ID);
+  // With Supabase the store only ever holds the visitor's own orders (row-level security).
+  const { orders, ready } = useStore();
+  const order = orders.find((o) => o.ref === ref && (supabase ? true : o.customer === DEMO_CUSTOMER_ID));
   const crumbs = useMemo(() => {
     const r = rng(7);
     return Array.from({ length: 26 }, (_, i) => {
@@ -39,7 +42,7 @@ export const SubmittedPage = () => {
     });
   }, []);
 
-  if (!order) return <NotFoundPage />;
+  if (!order) return ready ? <NotFoundPage /> : null;
 
   return (
     <main data-dark="1" style={{ position: 'relative', minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '120px var(--gutter) 80px', background: '#4A1019', color: '#F0EED9', overflow: 'hidden' }}>

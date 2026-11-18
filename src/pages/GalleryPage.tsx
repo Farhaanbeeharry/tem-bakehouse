@@ -5,7 +5,7 @@ import { useIsMobile } from '../lib/shop';
 
 // Each slot shows tem_gallery_NN.webp once TEM's real photo is uploaded; until then, the stand-in listed here.
 const ITEMS = [
-  ['Choco Chips, stacked', '3/4', asset.category('round')],
+  ['Choco Chip, stacked', '3/4', asset.category('round')],
   ['Morning bake', '1/1', asset.heroFrame('desktop', 1)],
   ['Cookie cake, personalised', '4/5', asset.category('cakes')],
   ['Birthdays', '4/5', asset.moment('birthday')],

@@ -1,25 +1,11 @@
 import { useState } from 'react';
 import { categories, products } from '../data/catalog';
-import { setStore, useStore, type ProductState } from '../lib/store';
+import { patchProduct, useStore } from '../lib/store';
 import { fmt } from '../lib/format';
 import { ProductVisual } from '../components/ProductVisual';
 import { ProductEditPanel } from './ProductEditPanel';
 
 const dietShort = (d: string) => (d === 'both' ? 'Regular + GF' : d === 'gf' ? 'GF only' : 'Regular');
-
-const patchProduct = (id: string, patch: Partial<ProductState>) =>
-  setStore((s) => {
-    const base = products.find((p) => p.id === id);
-    const existing = s.products.find((x) => x.id === id);
-    const next: ProductState = {
-      ...(existing ?? { id, status: base?.status ?? 'available', featured: !!base?.featured, enabled: true }),
-      ...patch,
-    };
-    return {
-      ...s,
-      products: existing ? s.products.map((x) => (x.id === id ? next : x)) : [...s.products, next],
-    };
-  });
 
 export const ProductsView = () => {
   const { products: states } = useStore();
@@ -93,7 +79,7 @@ export const ProductsView = () => {
                 <td style={{ padding: '10px 14px' }}>{categories.find((c) => c.id === p.cat)?.name ?? p.cat}</td>
                 <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                   {fmt(p.price)}
-                  {p.boxOf && <span className="adm-small"> per cookie</span>}
+                  {p.boxFee != null && <span className="adm-small"> box fee + cookies</span>}
                   {p.price !== p.basePrice && <span className="adm-small"> (was {fmt(p.basePrice)})</span>}
                 </td>
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{dietShort(p.diet)}</td>

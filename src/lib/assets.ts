@@ -13,6 +13,11 @@ export const asset = {
   moment: (id: string) => `/assets/moments/tem_moment_${id}.webp`,
   gallery: (n: number) => `/assets/gallery/tem_gallery_${String(n).padStart(2, '0')}.webp`,
   baker: '/assets/editorial/tem_about_baker_1800x2400.webp',
+  /** Product photo for shaped products (box, grande, cups, cakes, sticks, shots, collection). Takes priority over the category photo. */
+  productShot: (pid: string) => `/assets/products/${pid}/tem_${pid}.webp`,
+  collection: (n: number) => `/assets/collection/tem_collection_${String(n).padStart(2, '0')}.webp`,
+  /** The leaflet that goes with The Cookie Collection. */
+  collectionDoc: '/assets/collection/tem_cookie_collection_first_edition.pdf',
   productDetail: (flavour: string, kind: 'stack' | 'box') => `/assets/products/${flavour}/tem_${flavour}_${kind}.webp`,
 };
 

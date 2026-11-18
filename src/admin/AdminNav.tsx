@@ -1,5 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
+import { signOut, useAuth } from '../lib/auth';
 import { useStore } from '../lib/store';
+import { supabase } from '../lib/supabase';
 import { countIn } from './adminData';
 
 const SECTIONS: { path: string; label: string }[] = [
@@ -15,6 +17,7 @@ const SECTIONS: { path: string; label: string }[] = [
 
 export const AdminNav = () => {
   const { orders } = useStore();
+  const { user } = useAuth();
   const counts: Record<string, number> = {
     '/admin/orders': countIn(orders, ['pending_review', 'deposit_submitted']),
     '/admin/payments': countIn(orders, ['deposit_submitted']),
@@ -40,9 +43,14 @@ export const AdminNav = () => {
       </div>
       <div className="adm-nav-foot">
         <span className="adm-signed">
-          Signed in as <strong>Owner</strong>
+          Signed in as <strong>{user?.name || user?.email || 'Owner'}</strong>
         </span>
         <Link to="/">View public site →</Link>
+        {supabase && user && (
+          <button type="button" className="adm-linkbtn" style={{ textAlign: 'left' }} onClick={() => void signOut()}>
+            Sign out
+          </button>
+        )}
       </div>
     </nav>
   );

@@ -13,9 +13,11 @@ import { AboutPage } from './pages/AboutPage';
 import { GalleryPage } from './pages/GalleryPage';
 import { ContactPage } from './pages/ContactPage';
 import { PolicyPage } from './pages/PolicyPage';
+import { CookieCollectionPage } from './pages/CookieCollectionPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 const AdminApp = lazy(() => import('./admin/AdminApp'));
+const AdminGate = lazy(() => import('./admin/AdminGate').then((m) => ({ default: m.AdminGate })));
 
 export const App = () => (
   <Routes>
@@ -23,7 +25,9 @@ export const App = () => (
       path="/admin/*"
       element={
         <Suspense fallback={null}>
-          <AdminApp />
+          <AdminGate>
+            <AdminApp />
+          </AdminGate>
         </Suspense>
       }
     />
@@ -42,6 +46,7 @@ export const App = () => (
       <Route path="account" element={<AccountPage />} />
       <Route path="account/orders/:ref" element={<AccountPage />} />
       <Route path="how-to-order" element={<HowPage />} />
+      <Route path="cookie-collection" element={<CookieCollectionPage />} />
       <Route path="about" element={<AboutPage />} />
       <Route path="gallery" element={<GalleryPage />} />
       <Route path="contact" element={<ContactPage />} />

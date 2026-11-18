@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { Cookie } from './Cookie';
-import { categories, type Product } from '../data/catalog';
+import { categories, fromPrice as lowestPrice, type Product } from '../data/catalog';
+import { cookiePriceFrom, useProducts } from '../lib/store';
 import { dietLabel, fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
-import { useImageExists } from '../lib/assets';
-import { productPhotoSrc } from './ProductVisual';
+import { useProductPhoto } from './ProductVisual';
 import { BoxVisual } from './BoxVisual';
 
 export const ProductCard = ({ p }: { p: Product }) => {
@@ -14,11 +14,11 @@ export const ProductCard = ({ p }: { p: Product }) => {
   const fav = favs.includes(p.id);
   const cat = categories.find((c) => c.id === p.cat);
   const open = () => navigate('/cookies/' + p.id);
-  const needsOptions = p.flavourPick || p.custom || p.fillings || p.boxOf || p.pickFlavours;
-  const photo = productPhotoSrc(p.id);
-  const hasPhoto = useImageExists(photo);
-  // Cheapest pack, so a box of 4 shows what it actually costs rather than the per-cookie base.
-  const fromPrice = Math.min(...p.packs.map((k) => p.price * k.mult));
+  const needsOptions = p.flavourPick || p.custom || p.boxOf || p.styles || p.dipChoice || p.packs.some((k) => k.pick);
+  const photo = useProductPhoto(p.id);
+  const P = useProducts();
+  // Cheapest option, so a box shows what it actually costs rather than a per-cookie base.
+  const fromPrice = lowestPrice(p, cookiePriceFrom(P));
 
   return (
     <article style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
@@ -27,12 +27,12 @@ export const ProductCard = ({ p }: { p: Product }) => {
         className="card-tile"
         style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 22, background: soon ? '#EDE3D5' : '#E5DCC5', display: 'grid', placeItems: 'center', cursor: 'pointer', overflow: 'hidden' }}
       >
-        {p.boxOf ? (
-          <div style={{ position: 'absolute', inset: 0 }}>
-            <BoxVisual label={p.name} />
-          </div>
-        ) : photo && hasPhoto ? (
+        {photo ? (
           <img src={photo} alt={p.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
+        ) : p.boxOf || p.contents ? (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <BoxVisual label={p.name} slots={p.contents ?? (p.boxOf === 2 ? ['choco-chips', 'choco-chips'] : undefined)} />
+          </div>
         ) : (
           <div style={{ width: '80%', opacity: soon ? 0.55 : 1, filter: soon ? 'grayscale(0.5)' : 'none' }}>
             <Cookie flavour={p.flavour} />
@@ -67,7 +67,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
           </button>
           <span style={{ fontSize: 12, fontWeight: 600, color: p.diet === 'regular' ? '#6E5C4D' : '#3D5226' }}>{dietLabel(p.diet)}</span>
         </div>
-        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', marginTop: 16 }}>{(p.packs.length > 1 ? 'from ' : '') + fmt(fromPrice)}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', marginTop: 16 }}>{soon ? 'Price soon' : (p.packs.length > 1 || p.boxFee != null ? 'from ' : '') + fmt(fromPrice)}</span>
       </div>
       {soon ? (
         <div style={{ border: '1px dashed #C7B593', color: '#6E5C4D', borderRadius: 999, padding: '11px 16px', fontSize: 14, textAlign: 'center', minHeight: 44 }}>Not yet available to order</div>

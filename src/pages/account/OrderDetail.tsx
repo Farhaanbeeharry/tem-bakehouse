@@ -7,7 +7,8 @@ import { DONE_STATUSES, flow, flowLabels, statuses, type StatusId } from '../../
 import { whatsappUrl } from '../../data/site';
 import { fmt, isoDay, niceDate, uid } from '../../lib/format';
 import { useShop } from '../../lib/shop';
-import { estimateOf, pushStatus, updateOrder, useProducts, useStore, type Order } from '../../lib/store';
+import { unitPrice } from '../../data/catalog';
+import { cookiePriceFrom, estimateOf, pushStatus, updateOrder, useProducts, useStore, type Order } from '../../lib/store';
 
 const IDX: Partial<Record<StatusId, number>> = { pending_review: 0, changes_requested: 0, awaiting_approval: 0, deposit_required: 1, payment_failed: 1, deposit_submitted: 2, confirmed: 3, in_preparation: 4, ready: 5, out_for_delivery: 5, collected: 6, delivered: 6 };
 
@@ -63,7 +64,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
       const p = P.find((x) => x.id === l.pid);
       if (!p || p.status !== 'available') return [];
       const pk = p.packs.find((k) => k.id === l.packId) ?? p.packs[0];
-      return [{ ...l, key: uid(), unit: p.price * pk.mult }];
+      return [{ ...l, key: uid(), unit: unitPrice(p, pk, { filling: l.filling, dip: l.dip, box: l.box }, cookiePriceFrom(P)) }];
     });
     setCart((c) => [...c, ...lines]);
     setDrawerOpen(true);

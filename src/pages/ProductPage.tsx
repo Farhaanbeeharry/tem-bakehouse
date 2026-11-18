@@ -3,12 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BoxVisual, SAMPLE_BOX } from '../components/BoxVisual';
 import { Cookie } from '../components/Cookie';
 import { ProductCard } from '../components/ProductCard';
-import { productPhotoSrc } from '../components/ProductVisual';
-import { FILLINGS, categories, flavourById, flavours } from '../data/catalog';
+import { useProductPhoto } from '../components/ProductVisual';
+import { FILLINGS, PACKAGING_NOTE, categories, flavourById, flavours, packPrice, productFlavours, unitPrice } from '../data/catalog';
 import { asset, useImageExists } from '../lib/assets';
 import { fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
-import { useProducts } from '../lib/store';
+import { cookiePriceFrom, useProducts } from '../lib/store';
 import { NotFoundPage } from './NotFoundPage';
 
 type View = 'shape' | 'whole' | 'broken' | 'crumb';
@@ -38,29 +38,37 @@ const ProductDetail = ({ id }: { id: string }) => {
   const P = useProducts();
   const { addLine, setDrawerOpen, favs, toggleFav } = useShop();
   const p = P.find((x) => x.id === id)!;
-  const [pd, setPd] = useState({ pack: p.packs[0].id, qty: 1, diet: (p.diet === 'gf' ? 'gf' : 'regular') as 'regular' | 'gf', flavour: p.flavour, occasion: '', message: '', instructions: '', filling: '', box: [] as string[] });
+  const [pd, setPd] = useState({ pack: p.packs[0].id, qty: 1, diet: (p.diet === 'gf' ? 'gf' : 'regular') as 'regular' | 'gf', flavour: p.flavour, occasion: '', message: '', instructions: '', filling: '', dip: '', style: '', box: [] as string[] });
   const [picked, setView] = useState<View | null>(null);
   const f = flavourById[pd.flavour];
-  const shapeSrc = productPhotoSrc(p.id);
-  const shapeOk = useImageExists(shapeSrc);
-  const wholeOk = useImageExists(asset.productWhole(f.id));
+  const photo = useProductPhoto(p.id);
   const brokenOk = useImageExists(asset.productBroken(f.id));
   const crumbOk = useImageExists(asset.productCrumb(f.id));
-  const views: View[] = [...(shapeSrc && shapeOk ? (['shape'] as const) : []), 'whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
+  // A shaped product with its own photo shows just that photo, no cookie thumbnails underneath.
+  const views: View[] = photo ? ['shape'] : ['whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
   const view: View = picked && views.includes(picked) ? picked : views[0];
   const soon = p.status !== 'available';
   const fav = favs.includes(p.id);
   const pk = p.packs.find((k) => k.id === pd.pack) ?? p.packs[0];
   const cat = categories.find((c) => c.id === p.cat)!;
-  const recs = P.filter((x) => x.id !== p.id && x.status === 'available' && (x.cat !== p.cat || x.featured)).slice(0, 4);
+  const recs = P.filter((x) => x.id !== p.id && !x.hidden && x.status === 'available' && (x.cat !== p.cat || x.featured)).slice(0, 4);
   const set = (o: Partial<typeof pd>) => setPd((x) => ({ ...x, ...o }));
+  const cookiePrice = cookiePriceFrom(P);
   // With Gluten-free chosen, only flavours that come in a GF version can be picked.
-  const dietFlavours = (diet: 'regular' | 'gf') => flavours.filter((o) => o.status === 'available' && (diet === 'regular' || o.diet !== 'regular'));
+  const dietFlavours = (diet: 'regular' | 'gf') => productFlavours(p).filter((o) => diet === 'regular' || o.diet !== 'regular');
   const boxFlavours = dietFlavours(pd.diet);
+  const gfNames = productFlavours(p).filter((o) => o.diet !== 'regular').map((o) => o.name);
+  const pickN = pk.pick ?? 0;
   const boxLeft = p.boxOf ? p.boxOf - pd.box.length : 0;
-  const needsFilling = !!p.fillings && !pd.filling;
-  const pickLeft = p.pickFlavours ? p.pickFlavours - pd.box.length : 0;
-  const blocked = soon || boxLeft > 0 || pickLeft > 0 || needsFilling;
+  const pickLeft = pickN ? pickN - pd.box.length : 0;
+  const fillingOptions = p.fillings ? FILLINGS.filter((x) => f.fillings.includes(x.name)) : [];
+  const filling = fillingOptions.some((x) => x.name === pd.filling) ? pd.filling : '';
+  const needsStyle = !!p.styles && !pd.style;
+  const needsDip = !!p.dipChoice && !pd.dip;
+  const blocked = soon || boxLeft > 0 || pickLeft > 0 || needsStyle || needsDip;
+  const unit = unitPrice(p, pk, { filling, dip: pd.dip, box: pd.box }, cookiePrice);
+  const ingredients = p.cat === 'round' ? f.ingredients : (p.ingredients ?? f.ingredients);
+  const pickWord = ['', 'one', 'two', 'three', 'four', 'five'][pickN] ?? String(pickN);
   const setDiet = (diet: 'regular' | 'gf') => {
     const ok = dietFlavours(diet);
     set({
@@ -68,6 +76,10 @@ const ProductDetail = ({ id }: { id: string }) => {
       box: pd.box.filter((id) => ok.some((o) => o.id === id)),
       flavour: p.flavourPick && !ok.some((o) => o.id === pd.flavour) ? (ok[0]?.id ?? pd.flavour) : pd.flavour,
     });
+  };
+  const setPack = (id: string) => {
+    const n = p.packs.find((k) => k.id === id)?.pick;
+    set({ pack: id, ...(n != null ? { box: pd.box.slice(0, n) } : null) });
   };
   const togglePick = (id: string) => set({ box: pd.box.includes(id) ? pd.box.filter((x) => x !== id) : pickLeft > 0 ? [...pd.box, id] : pd.box });
   const boxAdd = (id: string) => boxLeft > 0 && set({ box: [...pd.box, id] });
@@ -78,14 +90,18 @@ const ProductDetail = ({ id }: { id: string }) => {
 
   const add = () => {
     if (blocked) return;
+    const picks = p.boxOf || pickN;
     addLine(p, {
       pack: pk.id,
       qty: pd.qty,
       diet: pd.diet,
-      flavour: p.boxOf || p.pickFlavours ? pd.box[0] : pd.flavour,
+      flavour: picks ? pd.box[0] : pd.flavour,
       custom: p.custom ? { occasion: pd.occasion, message: pd.message, instructions: pd.instructions } : null,
-      ...(p.fillings ? { filling: pd.filling } : null),
-      ...(p.boxOf || p.pickFlavours ? { box: [...pd.box] } : null),
+      filling: p.fixedFilling ?? (filling || undefined),
+      dip: pd.dip || undefined,
+      style: pd.style || undefined,
+      ...(picks ? { box: [...pd.box] } : null),
+      unit,
     });
     setDrawerOpen(true);
   };
@@ -109,31 +125,28 @@ const ProductDetail = ({ id }: { id: string }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,440px),1fr))', gap: 'clamp(28px,5vw,80px)', alignItems: 'start' }}>
         <div style={{ position: 'sticky', top: 90, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 28, background: '#E5DCC5', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
-            {p.boxOf ? (
+            {(p.boxOf || p.contents) && (pd.box.length > 0 || !photo) ? (
               <div style={{ position: 'absolute', inset: 0 }}>
                 <BoxVisual
                   background="#E5DCC5"
-                  slots={pd.box.length ? Array.from({ length: p.boxOf }, (_, i) => pd.box[i]) : SAMPLE_BOX}
+                  slots={p.contents ?? (pd.box.length ? Array.from({ length: p.boxOf! }, (_, i) => pd.box[i]) : p.boxOf === 2 ? ['choco-chips', 'choco-chips'] : SAMPLE_BOX)}
                   label={pd.box.length ? `Your box: ${pd.box.length} of ${p.boxOf} chosen` : p.name}
                 />
               </div>
+            ) : view === 'shape' && photo ? (
+              <img key="shape" src={photo} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />
             ) : view === 'whole' && (
               <div key={f.id} style={{ width: '74%', transform: `rotate(${flavours.indexOf(f) * 40}deg)`, transition: 'transform 1s var(--ease)', animation: 'temFade .5s ease both' }}>
                 <Cookie flavour={f.id} />
               </div>
             )}
-            {!p.boxOf && view === 'shape' && shapeSrc && <img key="shape" src={shapeSrc} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
             {view === 'broken' && <img key="broken" src={asset.productBroken(f.id)} alt={`${f.name} broken in half`} style={{ width: '88%', height: '88%', objectFit: 'contain', animation: 'temFade .5s ease both' }} />}
             {view === 'crumb' && <img key="crumb" src={asset.productCrumb(f.id)} alt={`Inside a ${f.name} cookie`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
-            {soon && !wholeOk && (
-              <div style={{ position: 'absolute', left: 18, bottom: 16, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6E5C4D' }}>PROVISIONAL VISUAL · awaiting product photo</div>
-            )}
           </div>
-          {!p.boxOf && views.length > 1 && (
+          {!p.boxOf && !p.contents && views.length > 1 && (
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(3, views.length)},1fr)`, gap: 12 }}>
               {views.map((v) => (
-                <Thumb key={v} label={v === 'shape' ? p.name : v === 'whole' ? `${f.name} cookie` : v === 'broken' ? 'the break' : 'the inside'} on={view === v} onPick={() => setView(v)}>
-                  {v === 'shape' && shapeSrc && <img src={shapeSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                <Thumb key={v} label={v === 'whole' ? `${f.name} cookie` : v === 'broken' ? 'the break' : 'the inside'} on={view === v} onPick={() => setView(v)}>
                   {v === 'whole' && (
                     <div style={{ width: '78%' }}>
                       <Cookie flavour={f.id} flat />
@@ -155,10 +168,18 @@ const ProductDetail = ({ id }: { id: string }) => {
             <h1 className="h-page" style={{ fontSize: 'clamp(33px,3.8vw,61px)', lineHeight: 0.9 }}>
               {p.name}
             </h1>
-            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.6, color: '#6E5C4D', maxWidth: '48ch' }}>{p.desc}</p>
+            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.6, color: '#6E5C4D', maxWidth: '48ch' }}>
+              {p.desc}
+              {pickN > 0 && ` Choose ${pickWord} flavours per box.`}
+            </p>
             <span className="h-card" style={{ fontSize: 25.6 }}>
-              {fmt(p.price * pk.mult * pd.qty)}
+              {soon ? 'Price to be announced' : fmt(unit * pd.qty)}
             </span>
+            {p.boxFee != null && !soon && (
+              <span style={{ fontSize: 13, color: '#6E5C4D' }}>
+                {fmt(p.boxFee)} for the box, plus each cookie at its round-cookie price{boxLeft > 0 ? `. ${boxLeft} still to pick.` : '.'}
+              </span>
+            )}
           </div>
 
           {soon && (
@@ -188,8 +209,8 @@ const ProductDetail = ({ id }: { id: string }) => {
               })}
             </div>
             <span style={{ fontSize: 12, color: '#6E5C4D' }}>
-              {p.boxOf || p.pickFlavours
-                ? 'A gluten-free box can include Choco Chips, Pistachio, Plain, Pinky and Nutty Crunch.'
+              {(p.boxOf || pickN) && p.diet !== 'regular'
+                ? `A gluten-free box can include ${gfNames.join(', ')}.`
                 : p.diet === 'both'
                   ? 'Available in both versions. Choose one per line.'
                   : p.diet === 'gf'
@@ -247,10 +268,10 @@ const ProductDetail = ({ id }: { id: string }) => {
             </fieldset>
           )}
 
-          {!!p.pickFlavours && (
+          {pickN > 0 && (
             <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: 'flex', gap: 10 }}>
-                Choose {p.pickFlavours} flavours
+                Choose {pickN} flavours
                 <span aria-live="polite" style={{ fontWeight: 500, color: pickLeft ? '#711D2C' : '#3D5226' }}>
                   {pickLeft ? `${pickLeft} left to pick` : 'All set'}
                 </span>
@@ -279,21 +300,69 @@ const ProductDetail = ({ id }: { id: string }) => {
             </fieldset>
           )}
 
-          {p.fillings && (
+          {p.styles && (
             <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
-              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Filling</legend>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Cookie bites or sticks</legend>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
-                {FILLINGS.map((fl) => (
-                  <button key={fl} type="button" className={`choice ${pd.filling === fl ? 'on' : ''}`} aria-pressed={pd.filling === fl} onClick={() => set({ filling: fl })} style={{ minHeight: 52, background: pd.filling === fl ? '#F2E3DF' : '#F8F6EC' }}>
-                    {fl}
+                {p.styles.map((x) => (
+                  <button key={x} type="button" className={`choice ${pd.style === x ? 'on' : ''}`} aria-pressed={pd.style === x} onClick={() => set({ style: x })} style={{ minHeight: 52, background: pd.style === x ? '#F2E3DF' : '#F8F6EC' }}>
+                    {x}
                   </button>
                 ))}
               </div>
             </fieldset>
           )}
 
+          {p.dipChoice && (
+            <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Dipping (in the lid)</legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
+                {p.dipChoice.map((x) => (
+                  <button key={x} type="button" className={`choice ${pd.dip === x ? 'on' : ''}`} aria-pressed={pd.dip === x} onClick={() => set({ dip: x })} style={{ minHeight: 52, background: pd.dip === x ? '#F2E3DF' : '#F8F6EC' }}>
+                    {x}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {fillingOptions.length > 0 && (
+            <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Add a filling <span style={{ fontWeight: 500, color: '#6E5C4D' }}>(optional, price per cookie)</span></legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
+                {[{ name: '', price: 0 }, ...fillingOptions].map((x) => (
+                  <button key={x.name || 'none'} type="button" className={`choice ${filling === x.name ? 'on' : ''}`} aria-pressed={filling === x.name} onClick={() => set({ filling: x.name })} style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 52, background: filling === x.name ? '#F2E3DF' : '#F8F6EC' }}>
+                    <strong style={{ fontSize: 14 }}>{x.name || 'No filling'}</strong>
+                    {x.price > 0 && <span style={{ fontSize: 13, color: '#6E5C4D', fontWeight: 400 }}>+ {fmt(x.price)}</span>}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {p.dips && (
+            <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
+              <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Add a dip <span style={{ fontWeight: 500, color: '#6E5C4D' }}>(optional)</span></legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
+                {[{ name: '', price: 0 }, ...p.dips].map((x) => (
+                  <button key={x.name || 'none'} type="button" className={`choice ${pd.dip === x.name ? 'on' : ''}`} aria-pressed={pd.dip === x.name} onClick={() => set({ dip: x.name })} style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 52, background: pd.dip === x.name ? '#F2E3DF' : '#F8F6EC' }}>
+                    <strong style={{ fontSize: 14 }}>{x.name || 'No dip'}</strong>
+                    {x.price > 0 && <span style={{ fontSize: 13, color: '#6E5C4D', fontWeight: 400 }}>+ {fmt(x.price)}</span>}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {p.fixedFilling && (
+            <div style={{ fontSize: 14 }}>
+              <strong>Filling:</strong> {p.fixedFilling}
+            </div>
+          )}
+
+          {p.packs.length > 1 && (
           <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
-            <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Pack size</legend>
+            <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{p.cat === 'cakes' ? 'Size' : 'Pack size'}</legend>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8 }}>
               {p.packs.map((k) => (
                 <button
@@ -301,15 +370,17 @@ const ProductDetail = ({ id }: { id: string }) => {
                   type="button"
                   className={`choice ${k.id === pk.id ? 'on' : ''}`}
                   aria-pressed={k.id === pk.id}
-                  onClick={() => set({ pack: k.id })}
+                  onClick={() => setPack(k.id)}
                   style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 64, background: k.id === pk.id ? '#F2E3DF' : '#F8F6EC' }}
                 >
                   <strong style={{ fontSize: 14 }}>{k.label}</strong>
-                  <span style={{ fontSize: 13, color: '#6E5C4D', fontWeight: 400 }}>{fmt(p.price * k.mult)}</span>
+                  <span style={{ fontSize: 13, color: '#6E5C4D', fontWeight: 400 }}>{fmt(packPrice(p, k))}</span>
                 </button>
               ))}
             </div>
+            {p.packNote && <span style={{ display: 'block', marginTop: 10, fontSize: 12, color: '#6E5C4D' }}>{p.packNote}</span>}
           </fieldset>
+          )}
 
           {p.custom && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 20, borderRadius: 18, background: '#F8F6EC', border: '1px solid #D9CDB4' }}>
@@ -349,7 +420,7 @@ const ProductDetail = ({ id }: { id: string }) => {
               </button>
             </div>
             <button type="button" className="btn btn-primary" disabled={blocked} onClick={add} style={{ flex: '1 1 220px', height: 52 }}>
-              {soon ? 'Coming soon' : boxLeft > 0 ? `Pick ${boxLeft} more` : pickLeft > 0 ? `Pick ${pickLeft} more flavour${pickLeft > 1 ? 's' : ''}` : needsFilling ? 'Choose a filling' : 'Add to Order Request'}
+              {soon ? 'Coming soon' : boxLeft > 0 ? `Pick ${boxLeft} more` : pickLeft > 0 ? `Pick ${pickLeft} more flavour${pickLeft > 1 ? 's' : ''}` : needsStyle ? 'Choose bites or sticks' : needsDip ? 'Choose a dip' : 'Add to Order Request'}
             </button>
             <button
               type="button"
@@ -367,20 +438,38 @@ const ProductDetail = ({ id }: { id: string }) => {
               <summary>Cookie care</summary>
               <p>Every TEM cookie is baked fresh, with no preservatives, so it&apos;s at its best for two weeks. After that, the texture and taste begin to change.</p>
               <p>Not sure you&apos;ll finish them in time? Pop them in the freezer as soon as they arrive and they&apos;ll stay delicious for up to a month. Take one out whenever the moment calls for it.</p>
-              <p>
-                <strong>Reheat instructions</strong>
-              </p>
-              <ol>
-                <li>Preheat your oven to 150°C.</li>
-                <li>Place your frozen cookies on a baking tray. (If you want to thaw first, leave the cookie at room temperature for about 30 minutes before placing it in the oven.)</li>
-                <li>Warm them for 6 to 10 minutes, until soft and warm in the centre.</li>
-                <li>Let them rest for a minute, then enjoy.</li>
-              </ol>
+              {p.care ? (
+                <p>{p.care}</p>
+              ) : (
+                <>
+                  <p>
+                    <strong>Reheat instructions</strong>
+                  </p>
+                  <ol>
+                    <li>Preheat your oven to 150°C.</li>
+                    <li>Place your frozen cookies on a baking tray. (If you want to thaw first, leave the cookie at room temperature for about 30 minutes before placing it in the oven.)</li>
+                    <li>Warm them for 6 to 10 minutes, until soft and warm in the centre.</li>
+                    <li>Let them rest for a minute, then enjoy.</li>
+                  </ol>
+                </>
+              )}
             </details>
             <details className="faq">
               <summary>Ingredients &amp; allergens</summary>
+              <p>
+                <strong>Ingredients:</strong> {ingredients}
+              </p>
+              {p.fixedFilling && (
+                <p>
+                  <strong>Filling:</strong> {p.fixedFilling}
+                </p>
+              )}
               <p>Our regular cookies contain gluten, and some cookies in both ranges also contain nuts. If you have an allergy, please check the ingredients carefully before you order.</p>
               <p>Our gluten-free cookies are made with gluten-free ingredients and baked with the same care as our regular range, with no compromise on taste or texture. We want everyone to enjoy a TEM cookie moment. However, they are prepared in a kitchen that also handles gluten and nuts, so we can&apos;t guarantee they are free from traces. If you have coeliac disease or a serious allergy, please get in touch before ordering so we can talk it through.</p>
+            </details>
+            <details className="faq">
+              <summary>Packaging</summary>
+              <p>{PACKAGING_NOTE}</p>
             </details>
             <details className="faq">
               <summary>Collection &amp; delivery</summary>

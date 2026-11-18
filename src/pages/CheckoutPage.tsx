@@ -3,16 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ProductVisual } from '../components/ProductVisual';
 import { customText, lineMeta } from '../components/CartDrawer';
 import { COLLECTION_POINTS, DEMO_CUSTOMER_ID } from '../data/catalog';
-import { fmt, isoDay, niceDate } from '../lib/format';
+import { supabase } from '../lib/supabase';
+import { fmt, niceDate } from '../lib/format';
 import { useShop } from '../lib/shop';
-import { nextRef, setStore, useStore, type Order, type Settings } from '../lib/store';
+import { bookedCounts, submitOrder, useStore, type Settings } from '../lib/store';
 
 const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const DAY_NAMES = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
 
 type Day = { iso: string; label: string; why: string } | null;
 
-const buildMonth = (offset: number, settings: Settings, orders: Order[]) => {
+const buildMonth = (offset: number, settings: Settings, counts: Record<string, number>) => {
   const base = new Date();
   base.setDate(1);
   base.setMonth(base.getMonth() + offset);
@@ -20,10 +21,6 @@ const buildMonth = (offset: number, settings: Settings, orders: Order[]) => {
   const first = (new Date(y, m, 1).getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const counts: Record<string, number> = {};
-  orders.forEach((o) => {
-    if (!['declined', 'cancelled', 'expired'].includes(o.status)) counts[o.date] = (counts[o.date] || 0) + 1;
-  });
   const days: Day[] = Array.from({ length: first }, () => null);
   for (let d = 1; d <= n; d++) {
     const dt = new Date(y, m, d);
@@ -49,12 +46,24 @@ const SectionTitle = ({ n, children }: { n: string; children: string }) => (
 
 export const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { cart, setCart, estimate, user, guest, setGuest, openAuth, setDrawerOpen } = useShop();
-  const { settings, orders } = useStore();
+  const { cart, setCart, estimate, user, authLoading, guest, setGuest, openAuth, setDrawerOpen } = useShop();
+  const store = useStore();
+  const { settings } = store;
+  const counts = useMemo(() => bookedCounts(store), [store]);
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState('');
   const [calM, setCalM] = useState(0);
   const [ck, setCk] = useState({ location: '', date: '', slot: '', name: user?.name ?? '', phone: user?.phone ?? '', email: user?.email ?? '', notes: '', a1: false, a2: false, tried: false });
-  const cal = useMemo(() => buildMonth(calM, settings, orders), [calM, settings, orders]);
+  const cal = useMemo(() => buildMonth(calM, settings, counts), [calM, settings, counts]);
   const set = (o: Partial<typeof ck>) => setCk((x) => ({ ...x, ...o }));
+  // The session can finish restoring after the first render: prefill from it once it arrives.
+  const [prefilledFor, setPrefilledFor] = useState(user?.id);
+  if (user && prefilledFor !== user.id) {
+    setPrefilledFor(user.id);
+    setCk((x) => ({ ...x, name: x.name || user.name, phone: x.phone || user.phone, email: x.email || user.email }));
+  }
+
+  if (authLoading) return <main className="page page-narrow" style={{ minHeight: '70vh' }} />;
 
   if ((!user && !guest) || cart.length === 0) {
     return (
@@ -88,32 +97,26 @@ export const CheckoutPage = () => {
   if (!user && !/.+@.+\..+/.test(ck.email)) errs.push('Add an email address for updates');
   if (!ck.a1) errs.push('Accept the Order Policy');
 
-  const submit = () => {
+  const submit = async () => {
     if (errs.length) return set({ tried: true });
-    const ref = nextRef(orders);
-    const order: Order = {
-      ref,
-      customer: DEMO_CUSTOMER_ID,
-      created: isoDay(0),
+    if (sending) return;
+    setSending(true);
+    setSendErr('');
+    const { ref, error } = await submitOrder({
       date: ck.date,
       slot: ck.slot,
       method: 'collection',
       location: ck.location,
-      status: 'pending_review',
       items: cart,
       notes: ck.notes,
       estimate,
-      total: null,
-      depositPaid: 0,
-      balancePaid: 0,
-      log: [{ s: 'pending_review', t: isoDay(0) }],
-      internal: '',
       contactName: ck.name,
       phone: ck.phone,
       email: user?.email ?? ck.email,
       mediaConsent: ck.a2,
-    };
-    setStore((s) => ({ ...s, orders: [order, ...s.orders] }));
+    }, user?.id ?? (supabase ? '' : DEMO_CUSTOMER_ID));
+    setSending(false);
+    if (!ref) return setSendErr(error ?? 'Something went wrong. Please try again.');
     setCart(() => []);
     navigate('/submitted/' + ref);
   };
@@ -326,8 +329,13 @@ export const CheckoutPage = () => {
                 ))}
               </div>
             )}
-            <button type="button" className="btn btn-primary" style={{ minHeight: 56, fontSize: 16 }} onClick={submit}>
-              Submit Order Request
+            {sendErr && (
+              <div role="alert" style={{ padding: '14px 16px', borderRadius: 14, background: '#F3DCD8', color: '#8A2320', fontSize: 14, lineHeight: 1.6 }}>
+                <strong>Your request wasn&apos;t sent:</strong> {sendErr}
+              </div>
+            )}
+            <button type="button" className="btn btn-primary" style={{ minHeight: 56, fontSize: 16 }} onClick={() => void submit()} disabled={sending} aria-busy={sending}>
+              {sending ? 'Sending…' : 'Submit Order Request'}
             </button>
             <p style={{ margin: 0, fontSize: 12, color: '#6E5C4D' }}>Submitting sends your request for review. It is not a confirmed order.</p>
           </section>

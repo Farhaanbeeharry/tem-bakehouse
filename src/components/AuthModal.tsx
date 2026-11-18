@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cookie } from './Cookie';
 import { useIsMobile, useShop, type AuthMode } from '../lib/shop';
+import { sendPasswordReset, signIn, signUp, updatePassword } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 
 const TITLES: Record<AuthMode, [string, string]> = {
   login: ['Welcome back', 'Sign in'],
@@ -12,11 +14,12 @@ const TITLES: Record<AuthMode, [string, string]> = {
 };
 
 export const AuthModal = () => {
-  const { auth: mode, authPending, openAuth, closeAuth, setUser, setGuest, showToast, cart, setVerifyBanner } = useShop();
+  const { auth: mode, authPending, openAuth, closeAuth, setGuest, showToast, cart, setVerifyBanner } = useShop();
   const mobile = useIsMobile();
   const navigate = useNavigate();
   const [f, setF] = useState({ name: '', email: '', pw: '' });
   const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   if (!mode) return null;
 
   const go = (m: AuthMode) => {
@@ -24,29 +27,71 @@ export const AuthModal = () => {
     openAuth(m, authPending);
   };
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     const emailOk = /.+@.+\..+/.test(f.email);
-    if (mode === 'forgot') return emailOk ? go('sent') : setErr('Enter a valid email address.');
+    const run = async (fn: () => Promise<void>) => {
+      setBusy(true);
+      try {
+        await fn();
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    if (mode === 'forgot') {
+      if (!emailOk) return setErr('Enter a valid email address.');
+      return run(async () => {
+        const error = await sendPasswordReset(f.email);
+        if (error) return setErr(error);
+        go('sent');
+      });
+    }
     if (mode === 'sent') {
       setF({ ...f, pw: '' });
-      return go('reset');
+      // Without Supabase there is no email: jump straight to the reset screen.
+      return supabase ? closeAuth() : go('reset');
     }
     if (mode === 'reset') {
       if (f.pw.length < 8) return setErr('Use at least 8 characters.');
-      showToast('Password updated. You can sign in now.');
-      return go('login');
+      return run(async () => {
+        const error = await updatePassword(f.pw);
+        if (error) return setErr(error);
+        setF({ name: '', email: '', pw: '' });
+        if (supabase) {
+          showToast('Password updated.');
+          closeAuth();
+        } else {
+          showToast('Password updated. You can sign in now.');
+          go('login');
+        }
+      });
     }
     if (mode === 'register' && !f.name.trim()) return setErr('Add your name.');
     if (!emailOk) return setErr('Enter a valid email address.');
     if (f.pw.length < 8) return setErr('Password needs at least 8 characters.');
-    setUser({ name: f.name.trim() || 'Demo Customer', email: f.email, phone: '' });
-    setVerifyBanner(mode === 'register');
-    setF({ name: '', email: '', pw: '' });
-    setErr('');
-    closeAuth();
-    showToast(authPending ? 'Signed in — your request is just as you left it.' : 'Signed in');
-    if (authPending) navigate('/checkout');
+    return run(async () => {
+      if (mode === 'register') {
+        const { error, needsConfirmation } = await signUp(f.name.trim(), f.email, f.pw);
+        if (error) return setErr(error);
+        if (needsConfirmation) {
+          setErr('');
+          setF({ name: '', email: '', pw: '' });
+          closeAuth();
+          return showToast('Check your inbox to confirm your email, then sign in.');
+        }
+        setVerifyBanner(false);
+      } else {
+        const error = await signIn(f.email, f.pw);
+        if (error) return setErr(error);
+      }
+      setF({ name: '', email: '', pw: '' });
+      setErr('');
+      closeAuth();
+      showToast(authPending ? 'Signed in — your request is just as you left it.' : 'Signed in');
+      if (authPending) navigate('/checkout');
+    });
   };
 
   const [title, cta] = TITLES[mode];
@@ -152,7 +197,7 @@ export const AuthModal = () => {
           )}
           {mode === 'sent' && (
             <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6 }}>
-              If an account exists for <strong>{f.email}</strong>, a reset link is on its way. The link opens the password reset screen.
+              If an account exists for <strong>{f.email}</strong>, a reset link is on its way. Open it on this device to choose a new password.
             </p>
           )}
           {err && (
@@ -160,8 +205,8 @@ export const AuthModal = () => {
               {err}
             </div>
           )}
-          <button type="submit" className="btn btn-primary" style={{ minHeight: 52 }}>
-            {cta}
+          <button type="submit" className="btn btn-primary" style={{ minHeight: 52 }} disabled={busy} aria-busy={busy}>
+            {busy ? 'One moment…' : cta}
           </button>
           {authPending && (mode === 'login' || mode === 'register') && (
             <>

@@ -5,10 +5,10 @@ import { useIsMobile, useShop } from '../lib/shop';
 import { useProducts } from '../lib/store';
 import { fmt } from '../lib/format';
 import type { OrderLine } from '../lib/store';
-import { flavourById } from '../data/catalog';
+import { PACKAGING_NOTE, flavourById } from '../data/catalog';
 
 export const lineMeta = (l: OrderLine) =>
-  [l.pack, l.diet === 'gf' ? 'Gluten-free' : 'Regular', l.filling && 'Filling: ' + l.filling, l.box && boxSummary(l.box)].filter(Boolean).join(' · ');
+  [l.pack, l.diet === 'gf' ? 'Gluten-free' : 'Regular', l.style, l.filling && 'Filling: ' + l.filling, l.dip && 'Dip: ' + l.dip, l.box && boxSummary(l.box)].filter(Boolean).join(' · ');
 
 /** "2 × Choco Chips, Pistachio, Biscoff" */
 export const boxSummary = (ids: string[]) => {
@@ -26,7 +26,7 @@ export const CartDrawer = () => {
   if (!drawerOpen) return null;
 
   const inCart = cart.map((l) => l.pid);
-  const recs = P.filter((p) => p.status === 'available' && !inCart.includes(p.id) && !p.custom && !p.flavourPick && !p.pickFlavours && !p.boxOf && p.featured).slice(0, 2);
+  const recs = P.filter((p) => p.status === 'available' && !inCart.includes(p.id) && !p.hidden && !p.custom && !p.flavourPick && !p.packs.some((k) => k.pick) && !p.boxOf && !p.styles && !p.dipChoice && p.featured).slice(0, 2);
 
   const close = () => setDrawerOpen(false);
   const toCheckout = () => {
@@ -170,6 +170,7 @@ export const CartDrawer = () => {
             <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: '#6E5C4D' }}>
               TEM Bakehouse reviews every request and confirms the final price. A 50% deposit is requested only after acceptance.
             </p>
+            <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: '#6E5C4D' }}>{PACKAGING_NOTE}</p>
             <button type="button" className="btn btn-primary" style={{ minHeight: 54 }} onClick={toCheckout}>
               {user || guest ? 'Continue to collection details' : 'Sign in / Sign in as Guest'}
             </button>

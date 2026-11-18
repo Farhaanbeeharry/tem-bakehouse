@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { BoxVisual } from '../../components/BoxVisual';
 import { ImageSlot } from '../../components/ImageSlot';
 import { Cookie } from '../../components/Cookie';
-import { categories } from '../../data/catalog';
+import { categories as allCategories } from '../../data/catalog';
 import { asset } from '../../lib/assets';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { sectionProgress, useScrollTick } from '../../lib/scroll';
 
-const CAT_FLAVOUR: Record<string, string> = { round: 'choco-chips', box: 'pinky', mini: 'pistachio', cups: 'double-choco', cakes: 'red-velvet', sticks: 'plain', shots: 'ferrero' };
+const categories = allCategories.filter((c) => !c.hidden);
+
+const CAT_FLAVOUR: Record<string, string> = { grande: 'choco-chips', round: 'choco-chips', box: 'pinky', mini: 'pistachio', cups: 'double-choco', cakes: 'red-velvet', sticks: 'plain', shots: 'ferrero' };
 
 export const Collection = () => {
   const navigate = useNavigate();
