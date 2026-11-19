@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 export const asset = {
   heroFrame: (device: 'desktop' | 'mobile', n: number) =>
     `/assets/hero/${device}/tem_hero_${device}_${String(n).padStart(4, '0')}.webp`,
-  productWhole: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_whole.png`,
-  productBroken: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_broken.png`,
+  productWhole: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_whole.webp`,
+  productBroken: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_broken.webp`,
   productTop: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_top.webp`,
   productCrumb: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_crumb.png`,
   model: (flavour: string) => `/models/tem_${flavour}.glb`,

@@ -9,7 +9,7 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-RewriteCond %{REQUEST_URI} \.(glb|png|webp|jpg|jpeg|svg|js|css|ico|json|txt)$ [NC]
+RewriteCond %{REQUEST_URI} \.(glb|png|webp|jpg|jpeg|svg|js|css|ico|json|txt|pdf)$ [NC]
 RewriteRule ^ - [R=404,L]
 
 RewriteRule ^ index.html [L]

@@ -91,7 +91,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
       ['1/1', asset.category('round'), 'A stack of TEM round cookies'],
       ['4/5', asset.moment('treat'), 'A cookie and a coffee by the window'],
       ['1/1', asset.heroFrame('desktop', 96), 'Cookie breaking apart'],
-      ['3/4', asset.category('cups'), 'Cookie cups with Nutella, pistachio cream, cream cheese and Biscoff spread'],
+      ['3/4', asset.category('cups'), 'A TEM Cookie Cup of cookie bites with a chocolate hazelnut dip lid'],
     ],
   },
   {
