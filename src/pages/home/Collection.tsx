@@ -7,12 +7,15 @@ import { categories as allCategories } from '../../data/catalog';
 import { asset } from '../../lib/assets';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { sectionProgress, useScrollTick } from '../../lib/scroll';
+import { useStore } from '../../lib/store';
 
-const categories = allCategories.filter((c) => !c.hidden);
 
 const CAT_FLAVOUR: Record<string, string> = { grande: 'choco-chips', round: 'choco-chips', box: 'pinky', mini: 'pistachio', cups: 'double-choco', cakes: 'red-velvet', sticks: 'plain', shots: 'ferrero' };
 
 export const Collection = () => {
+  // Subscribing re-renders this when back-office edits rebuild the category list.
+  useStore();
+  const categories = allCategories.filter((c) => !c.hidden);
   const navigate = useNavigate();
   const mobile = useIsMobile();
   const reduced = useReducedMotion();
@@ -79,7 +82,7 @@ export const Collection = () => {
               style={{ all: 'unset', cursor: 'pointer', flex: '0 0 auto', width: cardW, scrollSnapAlign: 'center', display: 'flex', flexDirection: 'column', gap: 14, transformStyle: 'preserve-3d', willChange: 'transform' }}
             >
               <ImageSlot
-                src={asset.category(c.id)}
+                src={c.photo ?? asset.category(c.id)}
                 alt={c.name}
                 ratio="3 / 4"
                 radius={26}

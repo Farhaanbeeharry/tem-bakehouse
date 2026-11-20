@@ -25,3 +25,10 @@ dist-ssr
 
 # Deploy archive
 tem-bakehouse-cpanel.zip
+
+# Local Edge Function settings (Mailpit)
+supabase/functions/.env
+
+# cPanel upload parts
+tem-cpanel-*.zip
+tem-bakehouse-cpanel*.zip

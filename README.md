@@ -53,9 +53,34 @@ Password-reset and confirmation emails are caught by Mailpit at http://127.0.0.1
    ```
 5. For the cPanel deploy, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as GitHub repository secrets.
 
+### Email (no-reply@tembakehouse.com)
+
+Two Edge Functions send mail over SMTP, sharing `supabase/functions/_shared/mail.ts`:
+
+- `order-email`: the customer's "Request received" email with their reference, sent once per order (`orders.confirmation_sent_at`).
+- `contact-message`: the Contact form, delivered to `CONTACT_TO` with Reply-To set to the visitor.
+
+Locally they send to Mailpit (http://127.0.0.1:55424) using `supabase/functions/.env`. On Windows run `npx supabase functions serve --env-file supabase/functions/.env` from PowerShell (Git Bash rewrites a container path and it fails).
+
+On the hosted project:
+```bash
+npx supabase functions deploy order-email contact-message --use-api
+npx supabase secrets set SMTP_HOST=... SMTP_PORT=465 SMTP_USER=no-reply@tembakehouse.com SMTP_PASS=... \
+  "MAIL_FROM=TEM Bakehouse <no-reply@tembakehouse.com>" SITE_URL=https://<live domain> CONTACT_TO=<TEM inbox> [ORDER_NOTIFY_TO=<TEM inbox>]
+```
+Use port 465 (SSL): hosted Edge Functions block 25 and 587. Put the same mailbox in Dashboard → Authentication → SMTP Settings so sign-up confirmations and password resets come from it too.
+
 Without a Supabase URL and key the site falls back to the browser-only demo: data in `localStorage`, any email and 8+ character password signs in, and `/admin` is open. That keeps the current deploy working until the client's project is connected.
 
-**Prices are placeholders** (`src/data/catalog.ts`). Admin → Products can override them. **Contact details** go in `src/data/site.ts`, or in Admin → Settings → Store contact.
+**The catalogue** in `src/data/catalog.ts` is the starting point. Everything the owner changes in the back office is stored in Supabase and applied on top of it (`applyCatalog`):
+
+- **Products:** name, price, versions, description, ingredients, pack sizes and prices, fillings and photos per product. She can also add new cookies and products, or delete ones she added.
+- **Categories and filling prices**, kept in `settings.catalog`.
+- **Contact and social links:** Settings → Store contact. Empty ones are hidden on the site.
+- **Gallery photos:** Content.
+- **Team access:** Settings.
+
+Photos go to the public `catalog` storage bucket, which only admins can write to.
 
 ## Suggested demo path
 

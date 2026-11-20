@@ -172,7 +172,7 @@ export const CartDrawer = () => {
             </p>
             <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: '#6E5C4D' }}>{PACKAGING_NOTE}</p>
             <button type="button" className="btn btn-primary" style={{ minHeight: 54 }} onClick={toCheckout}>
-              {user || guest ? 'Continue to collection details' : 'Sign in / Sign in as Guest'}
+              {user || guest ? 'Continue to collection details' : 'Sign in / Order as Guest'}
             </button>
           </div>
         )}

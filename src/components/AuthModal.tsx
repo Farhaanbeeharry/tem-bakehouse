@@ -216,7 +216,7 @@ export const AuthModal = () => {
                 <span style={{ flex: 1, height: 1, background: '#D9CDB4' }} />
               </div>
               <button type="button" className="btn btn-outline" style={{ minHeight: 52 }} onClick={asGuest}>
-                Sign in as Guest
+                Order as Guest
               </button>
             </>
           )}

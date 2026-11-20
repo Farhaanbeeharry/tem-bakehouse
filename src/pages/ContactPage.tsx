@@ -1,16 +1,28 @@
 import { useState, type FormEvent } from 'react';
-import { instagramLabel, instagramUrl, site, whatsappUrl } from '../data/site';
-import { useStore } from '../lib/store';
+import { useSiteContact } from '../lib/contact';
+import { supabase } from '../lib/supabase';
 
 export const ContactPage = () => {
-  const { settings } = useStore();
-  const c = settings.contact;
-  const [f, setF] = useState({ name: '', email: '', msg: '' });
+  const c = useSiteContact();
+  const [f, setF] = useState({ name: '', email: '', msg: '', website: '' });
   const [sent, setSent] = useState(false);
-  const wa = c?.whatsapp ? `https://wa.me/${c.whatsapp.replace(/\D/g, '')}` : whatsappUrl();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    // Browser-only demo: nothing to send to.
+    if (!supabase) return setSent(true);
+    setBusy(true);
+    setErr('');
+    const { error } = await supabase.functions.invoke('contact-message', { body: { name: f.name, email: f.email, message: f.msg, website: f.website } });
+    setBusy(false);
+    if (error) {
+      const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+      setErr(detail?.error ?? 'Your message couldn’t be sent. Please try again, or reach us on WhatsApp.');
+      return;
+    }
     setSent(true);
   };
 
@@ -25,26 +37,42 @@ export const ContactPage = () => {
           Have a question about flavours, allergies or a special occasion? Send us a message. We&apos;re always happy to talk cookies.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <a href={wa} target="_blank" rel="noopener" style={{ ...row, background: '#711D2C', color: '#F8F6EC' }}>
-            WhatsApp <span style={sub}>{c?.whatsapp || site.whatsappNumber || 'number to be supplied'}</span>
-          </a>
-          <a href={instagramUrl()} target="_blank" rel="noopener" style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
-            Instagram <span style={sub}>{instagramLabel()}</span>
-          </a>
-          <a href={site.facebookUrl || 'https://facebook.com/'} target="_blank" rel="noopener" style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
-            Facebook <span style={sub}>{site.facebookUrl ? 'TEM Bakehouse' : 'page link to be supplied'}</span>
-          </a>
+          {c.whatsappUrl && (
+            <a href={c.whatsappUrl} target="_blank" rel="noopener" style={{ ...row, background: '#711D2C', color: '#F8F6EC' }}>
+              WhatsApp <span style={sub}>{c.whatsapp}</span>
+            </a>
+          )}
+          {c.instagramUrl && (
+            <a href={c.instagramUrl} target="_blank" rel="noopener" style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
+              Instagram <span style={sub}>@{c.instagram}</span>
+            </a>
+          )}
+          {c.facebookUrl && (
+            <a href={c.facebookUrl} target="_blank" rel="noopener" style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
+              Facebook <span style={sub}>TEM Bakehouse</span>
+            </a>
+          )}
+          {c.tiktokUrl && (
+            <a href={c.tiktokUrl} target="_blank" rel="noopener" style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
+              TikTok <span style={sub}>@{c.tiktok}</span>
+            </a>
+          )}
+          {c.email && (
+            <a href={`mailto:${c.email}`} style={{ ...row, border: '1px solid #C7B593', color: '#1E1310' }}>
+              Email <span style={sub}>{c.email}</span>
+            </a>
+          )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
             <strong style={{ color: '#1E1310' }}>Collection location</strong>
             <br />
-            {c?.address || site.collectionLocation}
+            {c.address}
           </div>
           <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
             <strong style={{ color: '#1E1310' }}>Hours</strong>
             <br />
-            {c?.hours || site.hours || 'To be supplied'}
+            {c.hours || 'By appointment'}
           </div>
         </div>
       </div>
@@ -70,8 +98,14 @@ export const ContactPage = () => {
               Message
               <textarea className="input alt" rows={6} required value={f.msg} onChange={(e) => setF({ ...f, msg: e.target.value })} />
             </label>
-            <button type="submit" className="btn btn-primary" style={{ minHeight: 52 }}>
-              Send message
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} style={{ position: 'absolute', left: -9999, width: 1, height: 1, opacity: 0 }} />
+            {err && (
+              <p role="alert" style={{ margin: 0, fontSize: 14, color: '#9B2C2C' }}>
+                {err}
+              </p>
+            )}
+            <button type="submit" className="btn btn-primary" style={{ minHeight: 52 }} disabled={busy}>
+              {busy ? 'Sending…' : 'Send message'}
             </button>
           </>
         )}

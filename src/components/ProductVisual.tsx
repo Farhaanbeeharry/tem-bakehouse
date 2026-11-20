@@ -1,6 +1,6 @@
 import { BoxVisual } from './BoxVisual';
 import { Cookie } from './Cookie';
-import { products } from '../data/catalog';
+import { categories, products } from '../data/catalog';
 import { asset, useImageExists } from '../lib/assets';
 
 type Props = { pid?: string; flavour: string; flat?: boolean; radius?: number | string };
@@ -8,12 +8,14 @@ type Props = { pid?: string; flavour: string; flat?: boolean; radius?: number | 
 /** Category photo, for shaped products without their own photo. Round cookies and boxes have none. */
 export const productPhotoSrc = (pid?: string) => {
   const p = pid ? products.find((x) => x.id === pid) : undefined;
-  return p && p.cat !== 'round' && !p.boxOf ? asset.category(p.cat) : null;
+  if (!p || p.cat === 'round' || p.boxOf) return null;
+  return categories.find((c) => c.id === p.cat)?.photo ?? asset.category(p.cat);
 };
 
-/** The product's own photo if one exists, else its category photo, else null. */
+/** A photo uploaded in the back office, else the product's own photo, else its category photo, else null. */
 export const useProductPhoto = (pid?: string) => {
-  const shot = pid && !pid.startsWith('round-') ? asset.productShot(pid) : null;
+  const p = pid ? products.find((x) => x.id === pid) : undefined;
+  const shot = pid && !pid.startsWith('round-') ? (p?.photo ?? asset.productShot(pid)) : null;
   const shotOk = useImageExists(shot);
   const cat = productPhotoSrc(pid);
   const catOk = useImageExists(cat);

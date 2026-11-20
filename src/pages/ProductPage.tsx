@@ -42,7 +42,8 @@ const ProductDetail = ({ id }: { id: string }) => {
   const [picked, setView] = useState<View | null>(null);
   const f = flavourById[pd.flavour];
   const photo = useProductPhoto(p.id);
-  const brokenOk = useImageExists(asset.productBroken(f.id));
+  const brokenSrc = f.photoBroken ?? asset.productBroken(f.id);
+  const brokenOk = useImageExists(brokenSrc);
   const crumbOk = useImageExists(asset.productCrumb(f.id));
   // A shaped product with its own photo shows just that photo, no cookie thumbnails underneath.
   const views: View[] = photo ? ['shape'] : ['whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
@@ -140,7 +141,7 @@ const ProductDetail = ({ id }: { id: string }) => {
                 <Cookie flavour={f.id} />
               </div>
             )}
-            {view === 'broken' && <img key="broken" src={asset.productBroken(f.id)} alt={`${f.name} broken in half`} style={{ width: '88%', height: '88%', objectFit: 'contain', animation: 'temFade .5s ease both' }} />}
+            {view === 'broken' && <img key="broken" src={brokenSrc} alt={`${f.name} broken in half`} style={{ width: '88%', height: '88%', objectFit: 'contain', animation: 'temFade .5s ease both' }} />}
             {view === 'crumb' && <img key="crumb" src={asset.productCrumb(f.id)} alt={`Inside a ${f.name} cookie`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'temFade .5s ease both' }} />}
           </div>
           {!p.boxOf && !p.contents && views.length > 1 && (
@@ -152,7 +153,7 @@ const ProductDetail = ({ id }: { id: string }) => {
                       <Cookie flavour={f.id} flat />
                     </div>
                   )}
-                  {v === 'broken' && <img src={asset.productBroken(f.id)} alt="" style={{ width: '92%', height: '92%', objectFit: 'contain' }} />}
+                  {v === 'broken' && <img src={brokenSrc} alt="" style={{ width: '92%', height: '92%', objectFit: 'contain' }} />}
                   {v === 'crumb' && <img src={asset.productCrumb(f.id)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
                 </Thumb>
               ))}

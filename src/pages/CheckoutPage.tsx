@@ -68,8 +68,8 @@ export const CheckoutPage = () => {
   if ((!user && !guest) || cart.length === 0) {
     return (
       <main className="page page-narrow" style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start' }}>
-        <h1 className="h-page">{cart.length === 0 ? 'Your request is empty.' : 'Sign in, or sign in as Guest.'}</h1>
-        <p className="lede">{cart.length === 0 ? 'Add a few cookies first, then choose your collection date.' : 'Your selections are saved. Sign in to track your order from your account, or sign in as Guest.'}</p>
+        <h1 className="h-page">{cart.length === 0 ? 'Your request is empty.' : 'Sign in, or order as Guest.'}</h1>
+        <p className="lede">{cart.length === 0 ? 'Add a few cookies first, then choose your collection date.' : 'Your selections are saved. Sign in to track your order from your account, or order as Guest.'}</p>
         {cart.length === 0 ? (
           <Link to="/cookies" className="btn btn-primary">
             Browse cookies
@@ -80,7 +80,7 @@ export const CheckoutPage = () => {
               Sign in
             </button>
             <button type="button" className="btn btn-outline" onClick={() => setGuest(true)}>
-              Sign in as Guest
+              Order as Guest
             </button>
           </div>
         )}

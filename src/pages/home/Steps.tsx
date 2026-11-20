@@ -4,7 +4,7 @@ import { sectionProgress, useScrollTick } from '../../lib/scroll';
 
 export const ORDER_STEPS = [
   ['Choose your cookies', 'Your type of cookies, pack size and personal touch.'],
-  ['Submit your request', 'Sign in, or sign in as Guest, pick a date and time. You get a reference number.'],
+  ['Submit your request', 'Sign in or order as Guest, pick a date and time. You get a reference number.'],
   ['TEM reviews it', 'Availability is checked and TEM Bakehouse contacts you.'],
   ['Pay the 50% deposit', 'Only when requested, using the instructions you receive.'],
   ['Receive confirmation', 'Once your deposit is verified, your date is secured.'],

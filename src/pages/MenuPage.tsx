@@ -4,7 +4,6 @@ import { Cookie } from '../components/Cookie';
 import { categories as allCategories } from '../data/catalog';
 
 // The Cookie Collection has its own page, so it stays out of the menu.
-const categories = allCategories.filter((c) => !c.hidden);
 import { useProducts } from '../lib/store';
 
 const DIETS = [
@@ -16,6 +15,8 @@ const DIETS = [
 export const MenuPage = () => {
   const [params, setParams] = useSearchParams();
   const P = useProducts().filter((p) => !p.hidden);
+  // Read on every render: back-office edits rebuild the category list in place.
+  const categories = allCategories.filter((c) => !c.hidden);
   const rawCat = params.get('cat');
   const cat = rawCat && categories.some((c) => c.id === rawCat) ? rawCat : 'all';
   const diet = params.get('diet') ?? 'all';

@@ -98,7 +98,7 @@ const COLS: { par: number; mt: string; tiles: [string, string, string][] }[] = [
     par: -0.1,
     mt: '-30%',
     tiles: [
-      ['4/5', asset.category('cakes'), 'A cookie cake with buttercream swirls'],
+      ['4/5', asset.category('cakes'), 'A Choco Chip cookie cake filled with chocolate hazelnut spread'],
       ['3/4', asset.heroFrame('mobile', 95), 'Cookie halves with melted chocolate'],
       ['1/1', asset.moment('gift'), 'A gift box of six cookies'],
       ['4/5', asset.category('mini'), 'A box of mini cookies'],

@@ -15,7 +15,7 @@ export const COLORS = {
 export type Diet = 'regular' | 'gf' | 'both';
 export type Availability = 'available' | 'soon';
 
-export type Category = { id: string; name: string; short: string; blurb: string; /** Has its own page instead of a menu tab. */ hidden?: boolean };
+export type Category = { id: string; name: string; short: string; blurb: string; /** Has its own page instead of a menu tab. */ hidden?: boolean; /** Uploaded in the back office; replaces the bundled category photo. */ photo?: string };
 
 export type Flavour = {
   id: string;
@@ -30,6 +30,9 @@ export type Flavour = {
   ingredients: string;
   /** Names from FILLINGS that this flavour can be filled with. */
   fillings: string[];
+  /** Uploaded in the back office; replace the bundled cookie photos. */
+  photo?: string;
+  photoBroken?: string;
 };
 
 /** A priced add-on: round-cookie fillings, cookie-stick dips. */
@@ -83,6 +86,10 @@ export type Product = {
   /** Replaces the reheat instructions in Cookie care. */
   care?: string;
   packs: Pack[];
+  /** Uploaded in the back office; replaces the bundled product photo. */
+  photo?: string;
+  /** Created in the back office (can be deleted there). */
+  added?: boolean;
 };
 
 export const FILLINGS: Extra[] = [
@@ -126,9 +133,9 @@ export const flavours: Flavour[] = [
   { id: 'pistachio', name: 'Pistachio', status: 'available', diet: 'both', dough: '#C7AE78', chip: '#7D984C', price: 160, note: 'Green, nutty & quietly luxurious.', ingredients: 'Butter, caster sugar, brown sugar, pistachio cream, pistachio paste, eggs, vanilla extract, salt, green food colouring, flour and pistachio chunks.', fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'ferrero', name: 'Praline Dream', status: 'available', diet: 'regular', dough: '#A77346', chip: '#4A2A17', price: 170, note: 'The flavour you know, in a cookie you won’t forget.', ingredients: 'Butter, caster sugar, brown sugar, rocher cream, Ferrero Rocher chocolate, eggs, vanilla extract, salt and flour.', fillings: ['Nutella', 'Bueno Spread'] },
   { id: 'bueno', name: 'Bueno', status: 'available', diet: 'regular', dough: '#CF9E67', chip: '#6A4128', price: 170, note: 'Creamy, crunchy and impossible to stop at one.', ingredients: 'Butter, caster sugar, brown sugar, bueno cream, Kinder Bueno chocolate, eggs, vanilla extract, salt and flour.', fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
-  // Upcoming: no price from TEM yet. The price stays hidden while the flavour is "coming soon".
-  { id: 'salted-caramel', name: 'Salted Caramel', status: 'soon', diet: 'regular', dough: '#C58B4D', chip: '#E9C68B', price: 170, note: 'The sweet-and-salty comfort you’ll think about long after the last crumb.', ingredients: 'Coming soon.', fillings: [] },
-  { id: 'biscoff', name: 'Biscoff', status: 'soon', diet: 'regular', dough: '#B37340', chip: '#8A4E25', price: 170, note: 'Spiced caramel cookie with a creamy centre.', ingredients: 'Coming soon.', fillings: [] },
+  // Ingredients and price drafted for TEM to confirm.
+  { id: 'salted-caramel', name: 'Salted Caramel', status: 'available', diet: 'regular', dough: '#C58B4D', chip: '#E9C68B', price: 170, note: 'The sweet-and-salty comfort you’ll think about long after the last crumb.', ingredients: `${BASE}, flour, caramel chunks, salted caramel sauce and sea salt flakes.`, fillings: ['Nutella', 'Biscoff Spread'] },
+  { id: 'biscoff', name: 'Biscoff', status: 'available', diet: 'regular', dough: '#B37340', chip: '#8A4E25', price: 170, note: 'Spiced caramel cookie with a creamy centre.', ingredients: `${BASE}, flour, Lotus Biscoff biscuits and Biscoff spread.`, fillings: ['Biscoff Spread', 'Nutella'] },
 ];
 
 export const flavourById: Record<string, Flavour> = Object.fromEntries(flavours.map((f) => [f.id, f]));
@@ -165,13 +172,176 @@ export const products: Product[] = [
   ...roundProducts,
   { id: 'build-box', cat: 'box', flavour: 'choco-chips', name: 'Build Your Box', status: 'available', diet: 'both', desc: 'Pick four, mix freely, and make it yours. Each cookie is priced by its flavour, plus Rs 75 for the box.', price: 75, boxFee: 75, boxOf: 4, ingredients: VARIES, packs: [{ id: 'b4', label: 'Box of 4', qty: 4, mult: 1 }] },
   { id: 'grande', cat: 'grande', flavour: 'choco-chips', name: 'The Grande Cookie (9 cm)', status: 'available', diet: 'regular', desc: 'At 9 cm, it’s thick, chewy and loaded with chocolate chips, the kind of cookie you break in half to share, then wish you hadn’t.', price: 275, boxOf: 2, ingredients: VARIES, packs: [{ id: 'g2', label: 'Box of 2', qty: 2, mult: 1 }] },
-  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Small enough to enjoy one after another.', price: 350, ingredients: VARIES, packs: [{ id: 'm12', label: 'Box of 12', qty: 12, mult: 1, pick: 3 }, { id: 'm16', label: 'Box of 16', qty: 16, mult: 16 / 12, pick: 4 }] },
+  { id: 'mini-box', cat: 'mini', flavour: 'choco-chips', name: 'Mini Cookie Box', status: 'available', diet: 'both', desc: 'Bite-sized cookies in a box. Small enough to enjoy one after another.', price: 350, ingredients: VARIES, packs: [{ id: 'm12', label: 'Box of 12', qty: 12, mult: 1, pick: 3 }, { id: 'm16', label: 'Box of 16', qty: 16, mult: 465 / 350, pick: 4 }] },
   { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'Cookie bites or sticks, easy to hold in one hand and made to stand out: one dip, one memorable moment.', price: 300, flavourPick: true, flavours: CLASSIC_FOUR, styles: ['Cookie Bites', 'Cookie Sticks'], dipChoice: ['Chocolate Hazelnut Spread', 'Speculoos Spread', 'Velour Spread'], ingredients: VARIES, packs: [{ id: 'c1', label: 'One size', qty: 1, mult: 1 }] },
   { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'The cookie you celebrate with, baked for birthdays, gatherings and every moment in between.', price: 1000, flavourPick: true, flavours: ['choco-chips', 'double-choco', 'red-velvet', 'pistachio', 'nutty-crunch', 'plain'], fixedFilling: 'Chocolate Hazelnut Spread', custom: true, ingredients: VARIES, packNote: 'Other sizes available upon request — get in touch.', packs: [{ id: 's', label: '15 cm', qty: 1, mult: 1 }, { id: 'l', label: '20 cm', qty: 1, mult: 1.3 }] },
   { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Crisp outside, soft within, and reimagined for dipping and easy, one-handed snacking.', price: 325, flavourPick: true, flavours: CLASSIC_FOUR, dips: [{ name: 'Nutella', price: 15 }, { name: 'Bueno Spread', price: 15 }, { name: 'Pistachio Spread', price: 20 }], ingredients: VARIES, packs: [{ id: 'k20', label: 'Box of 20', qty: 20, mult: 1 }, { id: 'k30', label: 'Box of 30', qty: 30, mult: 400 / 325 }] },
   { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 700, flavourPick: true, flavours: ['choco-chips'], ingredients: 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, milk chocolate chips, dark chocolate chips, milk chocolate or dark chocolate-lined.', care: 'Extra care: Refrigerate if not serving immediately. When the moment is right, let it sit at room temperature for 15 minutes, pour your favourite drink and have it your way.', packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 1 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1200 / 700 }] },
   { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Five signature flavours: Choco Chip, Double Choco, Pistachio, Red Velvet and Nutty Crunch.', price: 1000, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 5', qty: 5, mult: 1 }] },
 ];
+
+// Back-office edits --------------------------------------------------------------
+// The lists above are the built-in catalogue. What the owner changes in the back office is stored in
+// Supabase (product_state.edit and settings.catalog) and applied on top of them by applyCatalog, which
+// rebuilds these exported lists in place so every page picks the changes up on its next render.
+
+/** A pack size with its own price, as edited in the back office. */
+export type PackEdit = { id: string; label: string; qty: number; price: number; pick?: number };
+
+export type ProductEdit = {
+  name?: string;
+  desc?: string;
+  ingredients?: string;
+  diet?: Diet;
+  packs?: PackEdit[];
+  /** Round cookies: fillings this flavour can take. */
+  fillings?: string[];
+  photo?: string;
+  photoBroken?: string;
+  /** Set on products created in the back office. */
+  def?: { cat: string; flavourPick?: boolean; custom?: boolean; dough?: string };
+};
+
+export type CategoryEdit = { id: string; name: string; blurb: string; photo?: string; added?: boolean };
+export type CatalogEdits = { categories?: CategoryEdit[]; fillings?: Extra[] };
+export type ProductEditRow = { id: string; price?: number; edit?: ProductEdit };
+
+const ROUND_PACKS: Pack[] = [
+  { id: 'p1', label: 'Single', qty: 1, mult: 1 },
+  { id: 'p4', label: 'Box of 4', qty: 4, mult: 4 },
+];
+
+const roundProduct = (f: Flavour, featured: boolean): Product => ({
+  id: 'round-' + f.id,
+  cat: 'round',
+  flavour: f.id,
+  name: f.name,
+  status: f.status,
+  diet: f.diet,
+  desc: f.note,
+  price: f.price,
+  featured,
+  fillings: f.fillings.length > 0,
+  packs: ROUND_PACKS,
+});
+
+const BUILT_IN = {
+  flavours: structuredClone(flavours),
+  products: structuredClone(products),
+  categories: structuredClone(categories),
+  fillings: structuredClone(FILLINGS),
+};
+
+const replaceAll = <T,>(target: T[], items: T[]) => {
+  target.splice(0, target.length, ...items);
+};
+
+const editedPacks = (packs: Pack[], edits: PackEdit[] | undefined, price: number): Pack[] =>
+  edits?.length
+    ? edits.map((k) => ({ id: k.id, label: k.label, qty: k.qty, mult: price > 0 ? k.price / price : 1, pick: k.pick ?? packs.find((x) => x.id === k.id)?.pick }))
+    : packs;
+
+export const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'item';
+
+let lastKey = '';
+
+/** Rebuilds flavours, products, categories and fillings from the built-in catalogue plus the owner's edits. */
+export const applyCatalog = (rows: ProductEditRow[], extra: CatalogEdits | undefined) => {
+  const key = JSON.stringify([rows.map((r) => [r.id, r.price, r.edit]), extra]);
+  if (key === lastKey) return;
+  lastKey = key;
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
+  // Round cookies are flavours: built-in ones, then any added in the back office.
+  const fl: Flavour[] = BUILT_IN.flavours.map((f) => ({ ...f }));
+  for (const r of rows) {
+    const id = r.id.slice('round-'.length);
+    if (r.id.startsWith('round-') && r.edit?.def && !fl.some((f) => f.id === id)) {
+      fl.push({ id, name: r.edit.name || 'New cookie', status: 'available', diet: r.edit.diet ?? 'regular', dough: r.edit.def.dough ?? '#C68B52', chip: null, note: r.edit.desc ?? '', price: r.price ?? 0, ingredients: r.edit.ingredients ?? '', fillings: r.edit.fillings ?? [] });
+    }
+  }
+  for (const f of fl) {
+    const r = byId.get('round-' + f.id);
+    if (!r) continue;
+    const e = r.edit;
+    f.name = e?.name || f.name;
+    f.note = e?.desc ?? f.note;
+    f.ingredients = e?.ingredients ?? f.ingredients;
+    f.diet = e?.diet ?? f.diet;
+    f.fillings = e?.fillings ?? f.fillings;
+    f.price = r.price ?? f.price;
+    f.photo = e?.photo;
+    f.photoBroken = e?.photoBroken;
+  }
+  replaceAll(flavours, fl);
+  for (const k of Object.keys(flavourById)) delete flavourById[k];
+  for (const f of fl) flavourById[f.id] = f;
+
+  // Products: round cookies from the flavours above, the other built-in products, then added ones.
+  const builtInIds = new Set(BUILT_IN.products.map((p) => p.id));
+  const ps: Product[] = [
+    ...fl.map((f) => {
+      const base = BUILT_IN.products.find((p) => p.id === 'round-' + f.id);
+      return { ...roundProduct(f, base ? !!base.featured : true), added: !base };
+    }),
+    ...BUILT_IN.products.filter((p) => p.cat !== 'round').map((p) => ({ ...p })),
+    ...rows
+      .filter((r) => r.edit?.def && !r.id.startsWith('round-') && !builtInIds.has(r.id))
+      .map((r): Product => {
+        const e = r.edit!;
+        return {
+          id: r.id,
+          cat: e.def!.cat,
+          flavour: 'choco-chips',
+          name: e.name || 'New product',
+          status: 'available',
+          diet: e.diet ?? 'regular',
+          desc: e.desc ?? '',
+          price: r.price ?? 0,
+          flavourPick: e.def!.flavourPick,
+          custom: e.def!.custom,
+          ingredients: e.ingredients,
+          packs: [{ id: 'k1', label: 'One size', qty: 1, mult: 1 }],
+          added: true,
+        };
+      }),
+  ];
+  for (const p of ps) {
+    const r = byId.get(p.id);
+    if (!r) continue;
+    const e = r.edit;
+    const price = r.price ?? p.price;
+    p.price = price;
+    if (p.boxFee != null) p.boxFee = price;
+    if (p.cat !== 'round') {
+      p.name = e?.name || p.name;
+      p.desc = e?.desc ?? p.desc;
+      p.ingredients = e?.ingredients ?? p.ingredients;
+      p.diet = e?.diet ?? p.diet;
+      p.photo = e?.photo;
+    }
+    p.packs = editedPacks(p.packs, e?.packs, price);
+  }
+  replaceAll(products, ps);
+
+  // Categories: renamed / re-described / new photo, plus categories added in the back office.
+  const catEdits = extra?.categories ?? [];
+  const cats: Category[] = BUILT_IN.categories.map((c) => {
+    const e = catEdits.find((x) => x.id === c.id);
+    return e ? { ...c, name: e.name || c.name, short: e.name || c.short, blurb: e.blurb ?? c.blurb, photo: e.photo } : { ...c };
+  });
+  for (const e of catEdits) if (e.added && !cats.some((c) => c.id === e.id)) cats.push({ id: e.id, name: e.name, short: e.name, blurb: e.blurb, photo: e.photo });
+  replaceAll(categories, cats);
+
+  replaceAll(FILLINGS, extra?.fillings?.length ? extra.fillings.map((f) => ({ ...f })) : BUILT_IN.fillings.map((f) => ({ ...f })));
+};
 
 /** Flavours a product can be made in. */
 export const productFlavours = (p: Product) => flavours.filter((f) => f.status === 'available' && (!p.flavours || p.flavours.includes(f.id)));

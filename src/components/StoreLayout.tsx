@@ -15,6 +15,7 @@ const TITLES: Record<string, string> = {
   '/checkout': 'Request details',
   '/account': 'My account',
   '/how-to-order': 'How to Order',
+  '/cookie-collection': 'The Cookie Collection',
   '/about': 'About',
   '/gallery': 'Gallery',
   '/contact': 'Contact',
@@ -22,7 +23,8 @@ const TITLES: Record<string, string> = {
   '/policies/media': 'Photo & Media Policy',
 };
 
-const pageTitle = (path: string) => {
+const pageTitle = (raw: string) => {
+  const path = raw.length > 1 ? raw.replace(/\/+$/, '') : raw;
   if (path === '/') return HOME_TITLE;
   const product = path.startsWith('/cookies/') && products.find((p) => p.id === path.slice(9));
   const name = product ? product.name : TITLES[path] ?? (path.startsWith('/account') ? 'My account' : path.startsWith('/submitted') ? 'Request received' : null);

@@ -4,7 +4,7 @@ import { statuses, type StatusId } from '../data/catalog';
 
 const STEPS = [
   ['Choose your cookies', 'Browse the menu, choose your type of cookies, pack size and add your personal touch.', 'Builds your order request'],
-  ['Submit your request', 'Sign in, or sign in as Guest, choose a collection date and time, accept the policies and submit. You’ll get a reference number. Accepting the Order Policy is required.', 'Status: Pending Review'],
+  ['Submit your request', 'Sign in or order as Guest, choose a collection date and time, accept the policies and submit. You’ll get a reference number. Accepting the Order Policy is required.', 'Status: Pending Review'],
   ['TEM reviews it', 'TEM Bakehouse checks the date and items. If anything needs to change, you approve the revised details first.', 'Status: Pending Review → Deposit Required'],
   ['Pay the 50% deposit', 'Only once requested. Follow the payment instructions in your account and submit your payment details.', 'Status: Deposit Verification Pending'],
   ['Receive confirmation', 'Once your deposit is verified, your date is secured and your order is confirmed.', 'Status: Order Confirmed'],

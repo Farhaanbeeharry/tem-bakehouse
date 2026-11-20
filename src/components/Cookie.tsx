@@ -22,7 +22,7 @@ const TEXTURE =
 /** A TEM cookie: the real product photo when supplied, otherwise a drawn stand-in in the flavour's colours. */
 export const Cookie = ({ flavour, flat = false, photo = true, alt }: Props) => {
   const f = flavourById[flavour] ?? flavourById['choco-chips'];
-  const src = asset.productWhole(f.id);
+  const src = f.photo ?? asset.productWhole(f.id);
   const hasPhoto = useImageExists(photo ? src : null);
 
   const drawn = useMemo(() => {

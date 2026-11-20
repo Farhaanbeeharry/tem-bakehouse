@@ -2,6 +2,7 @@ import { useStore, type StoreContact } from '../lib/store';
 import { patchSettings } from './adminData';
 import { DraftInput } from './DraftInput';
 import { DesktopAlerts } from './DesktopAlerts';
+import { TeamPanel } from './TeamPanel';
 
 const NOTIFICATIONS = [
   'New order request',
@@ -12,6 +13,16 @@ const NOTIFICATIONS = [
 ];
 
 const EMPTY_CONTACT: StoreContact = { whatsapp: '', address: '', hours: '' };
+
+const CONTACT_FIELDS: [keyof StoreContact, string, string][] = [
+  ['whatsapp', 'WhatsApp number', '+230 5xxx xxxx'],
+  ['email', 'Public email', 'hello@tembakehouse.com'],
+  ['instagram', 'Instagram', '@tembakehouse'],
+  ['facebook', 'Facebook page', 'facebook.com/tembakehouse'],
+  ['tiktok', 'TikTok', '@tembakehouse'],
+  ['address', 'Collection points', 'Terre Rouge / Port Louis'],
+  ['hours', 'Opening hours', 'Tue–Sun, 10:00–18:00'],
+];
 
 const parseOptionalNumber = (v: string) => (v.trim() === '' ? undefined : Math.max(0, Number(v) || 0));
 
@@ -149,46 +160,17 @@ export const SettingsView = () => {
       </section>
 
       <section className="adm-panel stack" style={{ gap: 10 }}>
-        <h2 className="adm-h2 lg">Team & permissions</h2>
-        <div className="adm-kv" style={{ fontSize: 14, padding: '8px 0' }}>
-          <span>
-            <strong>Owner</strong> · owner@tem.example
-          </span>
-          <span className="adm-small">Full access</span>
-        </div>
-        <div className="adm-kv" style={{ fontSize: 14, padding: '8px 0' }}>
-          <span>
-            <strong>Staff</strong> · staff@tem.example
-          </span>
-          <span className="adm-small">Orders & calendar</span>
-        </div>
-        <button type="button" className="adm-btn dashed" style={{ alignSelf: 'flex-start', padding: '8px 12px', minHeight: 0 }}>
-          + Invite
-        </button>
+        <TeamPanel />
         <h2 className="adm-h2 lg" style={{ marginTop: 8 }}>
           Store contact
         </h2>
-        <DraftInput
-          className="adm-input"
-          aria-label="WhatsApp number"
-          placeholder="WhatsApp number"
-          value={contact.whatsapp}
-          onCommit={(v) => setContact({ whatsapp: v })}
-        />
-        <DraftInput
-          className="adm-input"
-          aria-label="Collection address"
-          placeholder="Collection address"
-          value={contact.address}
-          onCommit={(v) => setContact({ address: v })}
-        />
-        <DraftInput
-          className="adm-input"
-          aria-label="Business hours"
-          placeholder="Business hours"
-          value={contact.hours}
-          onCommit={(v) => setContact({ hours: v })}
-        />
+        <span className="adm-small">Shown on the Contact page and in the footer. Anything left empty is hidden.</span>
+        {CONTACT_FIELDS.map(([key, label, placeholder]) => (
+          <label key={key} className="adm-label">
+            {label}
+            <DraftInput className="adm-input" placeholder={placeholder} value={contact[key] ?? ''} onCommit={(v) => setContact({ [key]: v.trim() })} />
+          </label>
+        ))}
       </section>
     </div>
   );

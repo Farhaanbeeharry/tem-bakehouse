@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { customers as demoCustomers, flavourById, packPrice, products, type Availability, type Customer, type Product, type StatusId } from '../data/catalog';
+import { applyCatalog, customers as demoCustomers, flavourById, packPrice, products, type Availability, type CatalogEdits, type Customer, type Product, type ProductEdit, type StatusId } from '../data/catalog';
 import { supabase } from './supabase';
 import { isoDay } from './format';
 
@@ -73,17 +73,35 @@ export type Settings = {
   depositDeadlineHours?: number;
   notifications?: Record<string, boolean>;
   contact?: StoreContact;
+  /** Category names, blurbs and photos, added categories and filling prices, edited in the back office. */
+  catalog?: CatalogEdits;
+  /** Photos uploaded for the Gallery page; when set they replace the stand-in photos. */
+  gallery?: GalleryPhoto[];
 };
 
-export type StoreContact = { whatsapp: string; address: string; hours: string };
+export type StoreContact = {
+  whatsapp: string;
+  address: string;
+  hours: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  email?: string;
+};
 
-export type ProductState = { id: string; status: Availability; featured: boolean; enabled: boolean; price?: number };
+export type GalleryPhoto = { url: string; caption: string };
+
+/** Someone with back-office access. */
+export type TeamMember = { id: string; name: string; email: string };
+
+export type ProductState = { id: string; status: Availability; featured: boolean; enabled: boolean; price?: number; edit?: ProductEdit };
 
 export type StoreState = {
   orders: Order[];
   settings: Settings;
   products: ProductState[];
   customers: Customer[];
+  team: TeamMember[];
   /** Open bookings per day across all customers (Supabase mode); null means count from `orders`. */
   booked: Record<string, number> | null;
   /** False until the first load from Supabase has finished. */
@@ -130,6 +148,7 @@ const freshState = (): StoreState => ({
   settings: defaultSettings(),
   products: products.map((p) => ({ id: p.id, status: p.status, featured: !!p.featured, enabled: true })),
   customers: demoCustomers,
+  team: [],
   booked: null,
   ready: true,
 });
@@ -149,7 +168,7 @@ const readLocal = (): StoreState => {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw) as StoreState;
-      if (s && Array.isArray(s.orders)) return { ...freshState(), ...s, settings: { ...defaultSettings(), ...s.settings }, customers: demoCustomers, booked: null, ready: true };
+      if (s && Array.isArray(s.orders)) return { ...freshState(), ...s, settings: { ...defaultSettings(), ...s.settings }, customers: demoCustomers, team: [], booked: null, ready: true };
     }
   } catch {
     /* corrupt or unavailable storage — fall through to fresh state */
@@ -162,10 +181,15 @@ const readLocal = (): StoreState => {
 // Shared in-memory state ----------------------------------------------------------
 
 let state: StoreState = supabase
-  ? { orders: [], settings: defaultSettings(), products: [], customers: [], booked: {}, ready: false }
+  ? { orders: [], settings: defaultSettings(), products: [], customers: [], team: [], booked: {}, ready: false }
   : readLocal();
 const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
+// Every state change passes through here, so the catalogue always reflects the back-office edits.
+const emit = () => {
+  applyCatalog(state.products, state.settings.catalog);
+  listeners.forEach((l) => l());
+};
+applyCatalog(state.products, state.settings.catalog);
 
 const setLocal = (fn: (s: StoreState) => StoreState) => {
   state = fn(state);
@@ -287,13 +311,13 @@ const toRow = (o: Order) => ({
 const submitted = new Map<string, Order>();
 
 type ProfileRow = { id: string; name: string; email: string; phone: string; is_admin: boolean };
-type ProductRow = { id: string; status: Availability; featured: boolean; enabled: boolean; price: number | string | null };
+type ProductRow = { id: string; status: Availability; featured: boolean; enabled: boolean; price: number | string | null; edit: ProductEdit | null };
 
 const loadRemote = async () => {
   const sb = supabase!;
   const [settingsRes, productsRes, ordersRes, profilesRes, bookedRes] = await Promise.all([
     sb.from('settings').select('data').eq('id', 1).maybeSingle(),
-    sb.from('product_state').select('id, status, featured, enabled, price'),
+    sb.from('product_state').select('id, status, featured, enabled, price, edit'),
     sb.from('orders').select('*').order('created', { ascending: false }),
     sb.from('profiles').select('id, name, email, phone, is_admin'),
     sb.rpc('booked_days'),
@@ -307,7 +331,8 @@ const loadRemote = async () => {
   state = {
     orders,
     settings: { ...defaultSettings(), ...((settingsRes.data?.data as Partial<Settings> | undefined) ?? {}) },
-    products: ((productsRes.data ?? []) as ProductRow[]).map((p) => ({ id: p.id, status: p.status, featured: p.featured, enabled: p.enabled, price: p.price == null ? undefined : Number(p.price) })),
+    products: ((productsRes.data ?? []) as ProductRow[]).map((p) => ({ id: p.id, status: p.status, featured: p.featured, enabled: p.enabled, price: p.price == null ? undefined : Number(p.price), edit: p.edit ?? undefined })),
+    team: ((profilesRes.data ?? []) as ProfileRow[]).filter((p) => p.is_admin).map((p) => ({ id: p.id, name: p.name || p.email, email: p.email })),
     customers: ((profilesRes.data ?? []) as ProfileRow[])
       .filter((p) => !p.is_admin)
       .map((p) => ({ id: p.id, name: p.name || p.email, email: p.email, phone: p.phone || '—', orders: orders.filter((o) => o.customer === p.id).length })),
@@ -396,6 +421,8 @@ export const submitOrder = async (o: NewOrder, customer: string): Promise<{ ref:
   submitted.set(data, order);
   setLocal((s) => ({ ...s, orders: [order, ...s.orders] }));
   reload();
+  // Email the customer their reference. The order is already saved, so a mail failure doesn't block them.
+  void supabase.functions.invoke('order-email', { body: { ref: data } }).then(({ error: mailError }) => mailError && console.warn('Order email failed:', mailError.message));
   return { ref: data, error: null };
 };
 
@@ -415,8 +442,43 @@ export const patchProduct = async (id: string, patch: Partial<ProductState>): Pr
   if (!supabase) return null;
   const { error } = await supabase
     .from('product_state')
-    .upsert({ id, status: next.status, featured: next.featured, enabled: next.enabled, price: next.price ?? null, updated_at: new Date().toISOString() });
+    .upsert({ id, status: next.status, featured: next.featured, enabled: next.enabled, price: next.price ?? null, edit: next.edit ?? null, updated_at: new Date().toISOString() });
   return report('Saving product ' + id, error);
+};
+
+/** Gives or removes back-office access. Customers become admins; admins can't remove themselves. */
+export const setAdmin = async (id: string, on: boolean): Promise<string | null> => {
+  if (!supabase) return 'Team access needs the live database.';
+  const { error } = await supabase.from('profiles').update({ is_admin: on }).eq('id', id);
+  if (!error) reload();
+  return report(on ? 'Giving access' : 'Removing access', error);
+};
+
+/** Removes a product added in the back office. */
+export const deleteProduct = async (id: string): Promise<string | null> => {
+  setLocal((s) => ({ ...s, products: s.products.filter((x) => x.id !== id) }));
+  if (!supabase) return null;
+  const { error } = await supabase.from('product_state').delete().eq('id', id);
+  return report('Deleting product ' + id, error);
+};
+
+/** Uploads a back-office photo and returns its public URL (a data URL in the browser-only demo). */
+export const uploadPhoto = async (file: File, folder: string): Promise<{ url: string | null; error: string | null }> => {
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return { url: null, error: 'Use a PNG, JPG or WebP image.' };
+  if (file.size > 8 * 1024 * 1024) return { url: null, error: 'That image is over 8 MB. Please use a smaller one.' };
+  if (!supabase) {
+    const url = await new Promise<string>((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.readAsDataURL(file);
+    });
+    return { url, error: null };
+  }
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${folder}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('catalog').upload(path, file, { contentType: file.type, cacheControl: '31536000' });
+  if (error) return { url: null, error: report('Uploading photo', error) };
+  return { url: supabase.storage.from('catalog').getPublicUrl(path).data.publicUrl, error: null };
 };
 
 export const pushStatus = (o: Order, status: StatusId): Order => ({ ...o, status, log: [...o.log, { s: status, t: isoDay(0) }] });

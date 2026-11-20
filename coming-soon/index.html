@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#711d2c">
+  <meta name="description" content="Something delicious is in the making. TEM Bakehouse's new website is coming soon. Enjoy a little taste while you wait.">
+  <title>Fresh out of the oven. Soon. | TEM Bakehouse</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/chocolate-chip.png" as="image">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="site-shell">
+    <header class="header">
+      <a class="brand" href="./" aria-label="TEM Bakehouse home">
+        <svg viewBox="465 829 1119 392" aria-hidden="true"><polygon points="465,829 794,829 794,909 675,909 675,1221 585,1221 585,909 465,909"/><polygon points="852,829 1122,829 1122,909 942,909 942,985 1097,985 1097,1058 942,1058 942,1141 1127,1141 1127,1221 852,1221"/><polygon points="1185,829 1283,829 1384,1031 1485,829 1584,829 1584,1221 1494,1221 1494,994 1412,1154 1356,1154 1276,994 1276,1221 1185,1221"/></svg>
+        <span>BAKEHOUSE</span>
+      </a>
+      <p class="header-note">Good things take a little baking.</p>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="headline">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="oven-mark" aria-hidden="true">✳</span> A NEW WEBSITE IS IN THE OVEN</p>
+          <h1 id="headline">Worth<br>the <span class="word-wait">wait<span class="period">.</span></span></h1>
+          <p class="intro">A little more mixing. A little more magic.<br>Our new website is coming soon, and it’s<br class="desktop-break"> going to be a sweet one.</p>
+          <button class="taste-button" type="button" hidden>Have a little taste <span aria-hidden="true">↗</span></button>
+          <p class="button-note" id="taste-note">Your screen. Our cookie. A little temptation.</p>
+        </div>
+
+        <div class="cookie-experience">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+          <div class="stamp" aria-hidden="true"><span>JUST A</span><strong>little</strong><span>TEASER</span></div>
+          <div class="cookie-stage">
+            <button class="cookie-button" type="button" aria-label="Take a virtual bite of the chocolate chip cookie" aria-describedby="cookie-message" disabled>
+              <img id="cookie-image" src="assets/chocolate-chip.png" alt="Golden chocolate chip cookie with melted chocolate and a sprinkle of salt" width="1024" height="1024" fetchpriority="high">
+            </button>
+            <div class="crumbs" aria-hidden="true"></div>
+          </div>
+          <div class="cookie-caption">
+            <span class="caption-line" aria-hidden="true"></span>
+            <p id="cookie-message" aria-live="polite" aria-atomic="true">A little preview. A lot to look forward to.</p>
+          </div>
+          <div class="flavour-picker" role="group" aria-label="Preview a cookie flavour" hidden>
+            <button type="button" data-flavour="chocolate" aria-pressed="true">Choc chip</button>
+            <button type="button" data-flavour="double" aria-pressed="false">Double choc</button>
+            <button type="button" data-flavour="pistachio" aria-pressed="false">Pistachio</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="launch-note" aria-label="Launch announcement">
+        <span class="note-symbol" aria-hidden="true">✳</span>
+        <p>The cookies are real.<br><strong>The website is nearly ready.</strong></p>
+        <p class="note-detail">We’re putting the finishing touches on our online home.<br>Come back soon for the full TEM experience.</p>
+      </aside>
+    </main>
+    <footer><span>© <span id="year">2026</span> TEM Bakehouse</span><span>A little patience. A lot of chocolate.</span><span>Made with love in Mauritius.</span></footer>
+  </div>
+</body>
+</html>
