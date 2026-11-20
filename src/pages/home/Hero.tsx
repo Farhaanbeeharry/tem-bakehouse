@@ -28,8 +28,12 @@ const STEP_VH = 0.6;
 
 /** Only every STRIDE-th exported frame is loaded; the cross-fade in draw() covers the gaps. */
 const STRIDE = 2;
+/** The loader only waits for every COARSE-th frame (spread over the whole animation); the rest stream in behind it. */
+const COARSE = 6;
 /** Parallel frame downloads. */
 const LANES = 6;
+/** How long a step waits for its in-between frames before playing on the coarse ones. */
+const FINE_WAIT_MS = 700;
 /** Longest a step waits for its frames before playing anyway. */
 const WAIT_MS = 4000;
 /** The loader never holds the page longer than this, even if some frames fail. */
@@ -57,7 +61,7 @@ export const Hero = () => {
   const seq = useRef<Seq | null>(null);
   const [ready, setReady] = useState(false);
   const [tick, setTick] = useState(0);
-  // Loader: the page stays covered and still until every hero frame is in.
+  // Loader: the page stays covered until a coarse pass of hero frames is in; the rest stream in behind it.
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [loaderGone, setLoaderGone] = useState(false);
@@ -94,12 +98,14 @@ export const Hero = () => {
     const finish = () => {
       if (!alive || finished) return;
       finished = true;
-      releaseHeavy();
       setProgress(1);
       setLoaded(true);
       setTick((t) => t + 1);
     };
-    const safety = window.setTimeout(finish, LOADER_MAX_MS);
+    const safety = window.setTimeout(() => {
+      finish();
+      releaseHeavy();
+    }, LOADER_MAX_MS);
     (async () => {
       const first = await load(0);
       if (!alive) return;
@@ -108,17 +114,30 @@ export const Hero = () => {
         setReady(true);
       }
       // Reduced motion shows only the first frame, so there's nothing more to wait for.
-      if (still || !first) return finish();
-      let next = 1, done = 1;
+      if (still || !first) {
+        releaseHeavy();
+        return finish();
+      }
+      // Coarse frames first (they gate the loader), then the in-between frames in playback order.
+      const coarse = Array.from({ length: N }, (_, i) => i).filter((i) => i > 0 && (i % COARSE === 0 || i === N - 1));
+      const fine = Array.from({ length: N }, (_, i) => i).filter((i) => i > 0 && i % COARSE !== 0 && i !== N - 1);
+      const queue = [...coarse, ...fine];
+      let next = 0, coarseDone = 0;
       const lane = async () => {
-        while (alive && next < N) {
-          await load(next++);
-          done++;
-          if (alive) setProgress(done / N);
+        while (alive && next < queue.length) {
+          const i = queue[next++];
+          await load(i);
+          if (!alive) return;
+          if (i % COARSE === 0 || i === N - 1) {
+            coarseDone++;
+            setProgress(coarseDone / coarse.length);
+            if (coarseDone === coarse.length) finish();
+          } else setTick((t) => t + 1);
         }
       };
       await Promise.all(Array.from({ length: LANES }, lane));
       finish();
+      releaseHeavy();
     })();
     return () => {
       alive = false;
@@ -148,16 +167,15 @@ export const Hero = () => {
       c.width = w;
       c.height = h;
     }
-    const f = p * (S.N - 1), i0 = Math.floor(f), t = f - i0;
-    const near = (i: number) => {
-      for (let d = 0; d < S.N; d++) {
-        if (S.imgs[i - d]) return S.imgs[i - d];
-        if (S.imgs[i + d]) return S.imgs[i + d];
-      }
-      return undefined;
-    };
-    const a = near(i0), b = S.imgs[Math.min(S.N - 1, i0 + 1)];
+    // Cross-fade between the nearest loaded frames either side, so gaps (frames still streaming in) dissolve instead of jumping.
+    const f = p * (S.N - 1);
+    let lo = Math.floor(f), hi = Math.min(S.N - 1, lo + 1);
+    while (lo > 0 && !S.imgs[lo]) lo--;
+    while (hi < S.N - 1 && !S.imgs[hi]) hi++;
+    let a = S.imgs[lo], b = S.imgs[hi];
+    if (!a) [a, b] = [b, undefined];
     if (!a) return;
+    const t = hi > lo ? Math.min(1, Math.max(0, (f - lo) / (hi - lo))) : 0;
     const ctx = c.getContext('2d')!;
     const paint = (img: HTMLImageElement, alpha: number) => {
       const k = Math.max(w / img.width, h / img.height), dw = img.width * k, dh = img.height * k;
@@ -209,12 +227,12 @@ export const Hero = () => {
     return window.scrollY >= top - 2 && window.scrollY <= top + len + 2;
   };
 
-  /** True once every frame between animation positions a and b is loaded. */
-  const framesReady = (a: number, b: number) => {
+  /** True once every frame between animation positions a and b is loaded (only the coarse ones when `coarse`). */
+  const framesReady = (a: number, b: number, coarse = false) => {
     const S = seq.current;
     if (!S || !S.ok) return false;
     const lo = Math.floor(Math.min(a, b) * (S.N - 1)), hi = Math.ceil(Math.max(a, b) * (S.N - 1));
-    for (let i = lo; i <= hi; i++) if (!S.imgs[i]) return false;
+    for (let i = lo; i <= hi; i++) if (!S.imgs[i] && (!coarse || i % COARSE === 0 || i === S.N - 1)) return false;
     return true;
   };
 
@@ -229,7 +247,8 @@ export const Hero = () => {
     // On a slow connection, hold the page until this step's frames are in, so it plays smoothly instead of jumping.
     const asked = performance.now();
     const waitThenPlay = () => {
-      if (reduced || framesReady(from, to) || performance.now() - asked > WAIT_MS) play(k, from, to, moveScroll);
+      const waited = performance.now() - asked;
+      if (reduced || framesReady(from, to) || (waited > FINE_WAIT_MS && framesReady(from, to, true)) || waited > WAIT_MS) play(k, from, to, moveScroll);
       else c.raf = requestAnimationFrame(waitThenPlay);
     };
     waitThenPlay();
