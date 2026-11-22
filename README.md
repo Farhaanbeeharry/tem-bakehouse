@@ -53,22 +53,37 @@ Password-reset and confirmation emails are caught by Mailpit at http://127.0.0.1
    ```
 5. For the cPanel deploy, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as GitHub repository secrets.
 
-### Email (no-reply@tembakehouse.com)
+### Email (Resend, no-reply@tembakehouse.com)
 
-Two Edge Functions send mail over SMTP, sharing `supabase/functions/_shared/mail.ts`:
+Every email the app sends goes through one helper, `supabase/functions/_shared/mail.ts`, so they all share the same sender:
 
-- `order-email`: the customer's "Request received" email with their reference, sent once per order (`orders.confirmation_sent_at`).
-- `contact-message`: the Contact form, delivered to `CONTACT_TO` with Reply-To set to the visitor.
+| | |
+|---|---|
+| From | `Tem Bakehouse <no-reply@tembakehouse.com>` (same name as the Supabase Auth SMTP sender) |
+| Reply-To | `contact@tembakehouse.com` (a real `Reply-To` header, so pressing Reply in any mail app writes to contact@) |
 
-Locally they send to Mailpit (http://127.0.0.1:55424) using `supabase/functions/.env`. On Windows run `npx supabase functions serve --env-file supabase/functions/.env` from PowerShell (Git Bash rewrites a container path and it fails).
+`no-reply@` is a send-only address with no mailbox. Override any of the three with the secrets `MAIL_FROM_NAME`, `MAIL_FROM_EMAIL` and `MAIL_REPLY_TO`.
 
-On the hosted project:
+Two Edge Functions use it:
+
+- `order-email`: the customer's "Request received" email with their reference, sent once per order (`orders.confirmation_sent_at`, plus a Resend idempotency key).
+- `contact-message`: the Contact form, delivered to `CONTACT_TO` (default contact@tembakehouse.com). This is the one email whose Reply-To is the visitor, so TEM can answer them directly.
+
+New emails (status changes, cancellations…) should call `sendMail()` from the same helper and get the same sender automatically. Failures are logged in the function logs with the order reference and a masked address; the browser only sees a generic error. The API key is never logged or sent to the browser.
+
+**Hosted project.** Create a Resend API key with *Sending access* limited to `tembakehouse.com`, then:
 ```bash
+npx supabase secrets set RESEND_API_KEY=re_... SITE_URL=https://tembakehouse.com [ORDER_NOTIFY_TO=<TEM inbox>]
 npx supabase functions deploy order-email contact-message --use-api
-npx supabase secrets set SMTP_HOST=... SMTP_PORT=465 SMTP_USER=no-reply@tembakehouse.com SMTP_PASS=... \
-  "MAIL_FROM=TEM Bakehouse <no-reply@tembakehouse.com>" SITE_URL=https://<live domain> CONTACT_TO=<TEM inbox> [ORDER_NOTIFY_TO=<TEM inbox>]
+# optional clean-up once Resend works: npx supabase secrets unset SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS MAIL_FROM
 ```
-Use port 465 (SSL): hosted Edge Functions block 25 and 587. Put the same mailbox in Dashboard → Authentication → SMTP Settings so sign-up confirmations and password resets come from it too.
+With `RESEND_API_KEY` set, the functions use Resend's API and ignore the SMTP settings.
+
+**Locally** there is no Resend key, so the same helper sends over SMTP to Mailpit (http://127.0.0.1:55424) using `supabase/functions/.env`. On Windows run `npx supabase functions serve --env-file supabase/functions/.env` from PowerShell (Git Bash rewrites a container path and it fails).
+
+**Supabase Auth emails** (sign-up confirmation, password reset, email change) are sent by Supabase itself, not by these functions. Point them at Resend in Dashboard → Authentication → Emails → SMTP Settings: host `smtp.resend.com`, port `465`, username `resend`, password a Resend API key, sender `no-reply@tembakehouse.com`, sender name `Tem Bakehouse`. Supabase's SMTP settings have **no Reply-To field**, so replies to these emails go to no-reply@ and bounce. To give them a Reply-To, replace SMTP with a *Send Email Auth Hook*: an Edge Function that receives each auth email from Supabase and sends it with `sendMail()`. It then has to rebuild every auth template and confirmation link itself, and if it fails nobody can sign up or reset a password, so test it on a staging project first. Until then, the auth templates point people to contact@tembakehouse.com in their footer.
+
+**Email designs.** The six Supabase Auth emails (confirmation, password reset, magic link, email change, invite, verification code) live in `supabase/templates/` with their subjects in `subjects.json`; local Supabase uses them through `config.toml`. After editing, upload them to the hosted project with `node --env-file=.env.local scripts/push-auth-emails.mjs` (it only touches subjects and templates). The order and contact emails use the same look from `layout()` in `supabase/functions/_shared/mail.ts`. The logo is `catalog/email/tem-logo.png` in Supabase Storage.
 
 Without a Supabase URL and key the site falls back to the browser-only demo: data in `localStorage`, any email and 8+ character password signs in, and `/admin` is open. That keeps the current deploy working until the client's project is connected.
 

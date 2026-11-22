@@ -1,0 +1,8 @@
+{
+  "confirmation": "Confirm your email · TEM Bakehouse",
+  "recovery": "Reset your TEM Bakehouse password",
+  "magic_link": "Your TEM Bakehouse sign-in link",
+  "email_change": "Confirm your new email address · TEM Bakehouse",
+  "invite": "You’re invited to TEM Bakehouse",
+  "reauthentication": "{{ .Token }} is your TEM Bakehouse code"
+}

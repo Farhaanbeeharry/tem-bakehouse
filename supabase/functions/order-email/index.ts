@@ -2,10 +2,10 @@
 // Called by the site right after submit_order. Each order is emailed once (orders.confirmation_sent_at),
 // only to the address on that order, and only within an hour of it being placed.
 //
-// Secrets (supabase secrets set ...): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM, SITE_URL,
+// Sender, Reply-To and transport come from ../_shared/mail.ts. Secrets: RESEND_API_KEY, SITE_URL,
 // and optionally ORDER_NOTIFY_TO (a copy for TEM).
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { cors, env, esc, json, layout, mailConfigured, sendMail } from '../_shared/mail.ts';
+import { cors, env, esc, json, layout, mailConfigured, maskEmail, MailError, sendMail } from '../_shared/mail.ts';
 
 const FLAVOURS: Record<string, string> = {
   plain: 'The Original', pinky: 'Pinky', 'choco-chips': 'Choco Chip', 'double-choco': 'Double Choco', 'nutty-crunch': 'Nutty Crunch',
@@ -39,11 +39,14 @@ Deno.serve(async (req) => {
 
   const { ref } = await req.json().catch(() => ({ ref: null }));
   if (typeof ref !== 'string' || !/^TEM-\d{4}-\d{3,}$/.test(ref)) return json({ error: 'Bad reference' }, 400);
-  if (!mailConfigured()) return json({ skipped: 'SMTP not configured' });
+  if (!mailConfigured()) return json({ skipped: 'email not configured' });
 
   const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
   const { data: o, error } = await db.from('orders').select('*').eq('ref', ref).maybeSingle();
-  if (error) return json({ error: error.message }, 500);
+  if (error) {
+    console.error(`[order-email] ${ref}: order lookup failed: ${error.message}`);
+    return json({ error: 'Could not load the order' }, 500);
+  }
   if (!o) return json({ error: 'Not found' }, 404);
   if (o.confirmation_sent_at) return json({ skipped: 'already sent' });
   if (Date.now() - new Date(o.created_at).getTime() > 60 * 60 * 1000) return json({ skipped: 'too old' });
@@ -96,9 +99,10 @@ Deno.serve(async (req) => {
       </table>
       <p style="margin:8px 0 0;font-size:12px;color:#6E5C4D">The final price is confirmed by TEM Bakehouse. Packaging is included; personalised touches are quoted separately.</p>
       ${o.notes ? `<p style="margin:18px 0 0;font-size:14px"><strong>Your notes:</strong> ${esc(o.notes)}</p>` : ''}
-      ${track ? `<p style="margin:24px 0 0"><a href="${track}" style="display:inline-block;background:#711D2C;color:#F0EED9;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Track your request</a></p>` : ''}`,
-    `Questions? ${whatsapp ? `WhatsApp us on ${esc(whatsapp)}, quoting ${esc(ref)}.` : `Contact us through the website, quoting ${esc(ref)}.`}<br>
-      This is an automatic email from TEM Bakehouse${site ? ` · <a href="${site}" style="color:#711D2C">${esc(site.replace(/^https?:\/\//, ''))}</a>` : ''}. Please don’t reply to it.`,
+      ${track ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 8px"><tr><td align="center" bgcolor="#711D2C" style="border-radius:999px"><a href="${track}" target="_blank" style="display:inline-block;padding:16px 34px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;color:#F8F6EC;text-decoration:none;border-radius:999px">Track your request</a></td></tr></table>` : ''}`,
+    `Questions? Reply to this email${whatsapp ? ` or WhatsApp us on ${esc(whatsapp)}` : ''}, quoting ${esc(ref)}.<br>
+      TEM Bakehouse · Terre Rouge &amp; Port Louis, Mauritius${site ? ` · <a href="${site}" style="color:#6E5C4D">Visit the website</a>` : ''}`,
+    `Reference ${esc(ref)}: we’ll confirm availability and the final price before any deposit.`,
   );
 
   const text = [
@@ -107,15 +111,25 @@ Deno.serve(async (req) => {
     ...items.map((l) => `${l.qty} × ${l.name} (${lineDetail(l)}) — ${rs(l.unit * l.qty)}`), '',
     `Estimated total: ${rs(estimate)}`, '',
     `We'll confirm availability and the final price, then ask for a ${deposit}% deposit. Use ${ref} as your payment reference.`,
-    track ? `Track your request: ${track}` : '', '', '— TEM Bakehouse',
+    track ? `Track your request: ${track}` : '', '', `Questions? Reply to this email, quoting ${ref}.`, '— TEM Bakehouse',
   ].join('\n');
 
   try {
-    await sendMail({ to, bcc: env('ORDER_NOTIFY_TO') || undefined, subject: `We received your request · ${ref}`, html, text });
+    const { id } = await sendMail({
+      to,
+      bcc: env('ORDER_NOTIFY_TO') || undefined,
+      subject: `We received your request · ${ref}`,
+      html,
+      text,
+      idempotencyKey: `order-confirmation/${ref}`,
+    });
+    console.log(`[order-email] ${ref}: sent to ${maskEmail(to)}${id ? ` (${id})` : ''}`);
   } catch (e) {
     // Release the claim so a retry can send it.
     await db.from('orders').update({ confirmation_sent_at: null }).eq('ref', ref);
-    return json({ error: 'Send failed: ' + (e as Error).message }, 502);
+    const msg = e instanceof MailError ? e.message : 'unexpected error';
+    console.error(`[order-email] ${ref}: not sent to ${maskEmail(to)}: ${msg}`);
+    return json({ error: 'The confirmation email could not be sent' }, 502);
   }
   return json({ sent: true });
 });
