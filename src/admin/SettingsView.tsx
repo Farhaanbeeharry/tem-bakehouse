@@ -16,12 +16,12 @@ const EMPTY_CONTACT: StoreContact = { whatsapp: '', address: '', hours: '' };
 
 const CONTACT_FIELDS: [keyof StoreContact, string, string][] = [
   ['whatsapp', 'WhatsApp number', '+230 5xxx xxxx'],
-  ['email', 'Public email', 'hello@tembakehouse.com'],
+  ['email', 'Public email', 'contact@tembakehouse.com'],
   ['instagram', 'Instagram', '@tembakehouse'],
   ['facebook', 'Facebook page', 'facebook.com/tembakehouse'],
   ['tiktok', 'TikTok', '@tembakehouse'],
-  ['address', 'Collection points', 'Terre Rouge / Port Louis'],
-  ['hours', 'Opening hours', 'Tue–Sun, 10:00–18:00'],
+  ['address', 'Collection points', 'Terre Rouge (near Winners) & Port Louis (near ICC)'],
+  ['hours', 'Opening hours', 'Weekdays: 09:00 – 16:00 · Saturday: 08:30 – 12:00'],
 ];
 
 const parseOptionalNumber = (v: string) => (v.trim() === '' ? undefined : Math.max(0, Number(v) || 0));

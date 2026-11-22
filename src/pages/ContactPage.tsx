@@ -64,12 +64,12 @@ export const ContactPage = () => {
           )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
+          <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D', whiteSpace: 'pre-line' }}>
             <strong style={{ color: '#1E1310' }}>Collection location</strong>
             <br />
             {c.address}
           </div>
-          <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D' }}>
+          <div style={{ padding: 16, border: '1.5px dashed #C7B593', borderRadius: 16, fontSize: 13, color: '#6E5C4D', whiteSpace: 'pre-line' }}>
             <strong style={{ color: '#1E1310' }}>Hours</strong>
             <br />
             {c.hours || 'By appointment'}

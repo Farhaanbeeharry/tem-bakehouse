@@ -26,7 +26,7 @@ export const AboutPage = () => (
     </section>
     <section style={{ padding: 'clamp(72px,10vw,120px) var(--gutter)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,380px),1fr))', gap: 'clamp(28px,5vw,72px)', alignItems: 'center' }}>
-        <ImageSlot src={asset.baker} alt="The TEM Bakehouse baker at work" ratio="4 / 5" radius={24} />
+        <ImageSlot src={asset.baker} alt="Fatemah, founder and baker of TEM Bakehouse" ratio="4 / 5" radius={24} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <h2 className="h-page" style={{ fontSize: 'clamp(25.6px,3.2vw,46px)', lineHeight: 0.95 }}>
             The baker
@@ -42,6 +42,10 @@ export const AboutPage = () => (
               I care about quality that begins with every ingredient and simplicity that lives in every bite. But what matters most is the moment: the feeling, the memory and the warmth that you and your people carry with you long after the last crumb.
             </p>
           </blockquote>
+          <p style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 26, color: '#711D2C' }}>Fatemah</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.2em', color: '#6E5C4D' }}>FOUNDER &amp; BAKER</span>
+          </p>
         </div>
       </div>
     </section>

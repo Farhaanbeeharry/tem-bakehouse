@@ -134,7 +134,7 @@ export const ProductEditPanel = ({ product: p, state, onClose }: Props) => {
           Pack sizes and prices
           {packs.map((k, i) => (
             <div key={k.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto', gap: 8, alignItems: 'center' }}>
-              <input className="adm-input" aria-label="Pack name" placeholder="e.g. Box of 4" value={k.label} onChange={(e) => setPack(i, { label: e.target.value })} />
+              <input className="adm-input" aria-label="Pack name" placeholder="e.g. Box of 12" value={k.label} onChange={(e) => setPack(i, { label: e.target.value })} />
               <input className="adm-input" aria-label="Number of pieces" type="number" min={1} title="Pieces in the pack" value={k.qty} onChange={(e) => setPack(i, { qty: Number(e.target.value) || 1 })} />
               <input className="adm-input" aria-label="Price (Rs)" type="number" min={0} value={k.price} onChange={(e) => setPack(i, { price: Number(e.target.value) })} />
               <button type="button" className="adm-btn soft sm" aria-label={`Remove ${k.label}`} disabled={packs.length < 2} onClick={() => setPacks((ks) => ks.filter((_, j) => j !== i))}>
@@ -159,7 +159,7 @@ export const ProductEditPanel = ({ product: p, state, onClose }: Props) => {
               </label>
             ))}
           </div>
-          <span className="adm-small">The Single price is the cookie price; a Box of 4 is four times it.</span>
+          <span className="adm-small">The price above is for one cookie; a filling is added per cookie.</span>
         </div>
       )}
       {!round && (isNew || edit.def) && (

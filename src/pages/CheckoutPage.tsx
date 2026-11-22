@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProductVisual } from '../components/ProductVisual';
 import { customText, lineMeta } from '../components/CartDrawer';
-import { COLLECTION_POINTS, DEMO_CUSTOMER_ID } from '../data/catalog';
+import { COLLECTION_LANDMARKS, COLLECTION_POINTS, DEMO_CUSTOMER_ID } from '../data/catalog';
 import { supabase } from '../lib/supabase';
 import { fmt, niceDate } from '../lib/format';
 import { useShop } from '../lib/shop';
@@ -152,7 +152,7 @@ export const CheckoutPage = () => {
                     style={{ textAlign: 'left', cursor: 'pointer', border: `1.5px solid ${on ? '#711D2C' : ck.tried && !ck.location ? '#B23A33' : '#D9CDB4'}`, background: on ? '#F2E3DF' : '#F8F6EC', color: '#1E1310', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}
                   >
                     <strong style={{ fontSize: 15 }}>Collect · {pt}</strong>
-                    <span style={{ fontSize: 13, color: '#6E5C4D' }}>Exact address shared on confirmation.</span>
+                    <span style={{ fontSize: 13, color: '#6E5C4D' }}>{COLLECTION_LANDMARKS[pt] ? `${COLLECTION_LANDMARKS[pt]}. ` : ''}Exact spot shared on confirmation.</span>
                   </button>
                 );
               })}

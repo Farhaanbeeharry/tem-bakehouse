@@ -1,12 +1,13 @@
-// Client-supplied details. Empty values show a "to be supplied" placeholder on the site.
+// Client-supplied details. The owner can override each one in the back office (Settings → Store contact).
+// Empty values are hidden on the site.
 export const site = {
   whatsappNumber: '', // e.g. '2305xxxxxxx' (digits only, country code first)
-  instagramHandle: '', // e.g. 'tembakehouse'
-  facebookUrl: '',
-  tiktokHandle: '', // e.g. 'tembakehouse'
-  collectionLocation: 'Terre Rouge / Port Louis',
-  hours: '',
-  email: '',
+  instagramHandle: 'tembakehouse',
+  facebookUrl: 'https://www.facebook.com/profile.php?id=61592704136301',
+  tiktokHandle: '',
+  collectionLocation: 'Terre Rouge (near Winners) & Port Louis (near ICC)',
+  hours: 'Weekdays: 09:00 – 16:00\nSaturday: 08:30 – 12:00',
+  email: 'contact@tembakehouse.com',
 };
 
 export const whatsappUrl = () => (site.whatsappNumber ? `https://wa.me/${site.whatsappNumber}` : 'https://wa.me/');
