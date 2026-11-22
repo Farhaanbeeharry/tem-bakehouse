@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cookie } from '../components/Cookie';
 import { ImageSlot } from '../components/ImageSlot';
-import { PACKAGING_INCLUDED } from '../data/catalog';
+import { ProductCard } from '../components/ProductCard';
+import { COLLECTION_FLAVOURS, PACKAGING_INCLUDED } from '../data/catalog';
 import { asset, probeFile } from '../lib/assets';
 import { fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
@@ -43,7 +44,9 @@ const useDocAvailable = () => {
 
 export const CookieCollectionPage = () => {
   const { addLine, setDrawerOpen } = useShop();
-  const product = useProducts().find((p) => p.id === 'cookie-collection');
+  const products = useProducts();
+  const product = products.find((p) => p.id === 'cookie-collection');
+  const more = products.filter((p) => p.cat === 'round' && !p.hidden && !COLLECTION_FLAVOURS.includes(p.flavour));
   const docOk = useDocAvailable();
   const available = product?.status === 'available';
 
@@ -156,6 +159,30 @@ export const CookieCollectionPage = () => {
           <p style={{ margin: 0, maxWidth: '60ch', fontSize: 13, lineHeight: 1.6, color: '#6E5C4D' }}>{PACKAGING_INCLUDED}</p>
         </div>
       </section>
+
+      {more.length > 0 && (
+        <section aria-label="More flavours" style={{ padding: 'clamp(72px,10vw,120px) var(--gutter)', background: '#E5DCC5' }}>
+          <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.24em', color: '#711D2C' }}>MORE TO DISCOVER</span>
+              <h2 className="h-page" style={{ fontSize: 'clamp(28px,3.4vw,48px)', lineHeight: 0.95 }}>
+                The rest of our cookies
+              </h2>
+              <p style={{ margin: 0, maxWidth: '56ch', fontSize: 17, lineHeight: 1.6, color: '#3B2519' }}>Beyond our mains, every other flavour we bake. Order them one by one, or mix them in a box.</p>
+            </div>
+            <div className="product-grid">
+              {more.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+            <div>
+              <Link to="/cookies" className="btn btn-outline">
+                See the full menu
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 };
