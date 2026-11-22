@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '../../components/Logo';
-import { asset, holdHeavyAssets } from '../../lib/assets';
+import { asset, holdHeavyAssets, holdImageProbes } from '../../lib/assets';
 import { useIsMobile, useReducedMotion } from '../../lib/shop';
 import { sectionProgress, seg, useScrollTick } from '../../lib/scroll';
 
@@ -13,7 +13,8 @@ const CAPTIONS = [
 const RAIL = ['01 SURFACE', '02 THE BREAK', '03 SHARE', '04 SAVOUR', '05 TEM'];
 const RAIL_RANGES = [0, 0.3, 0.5, 0.68, 0.86, 1.01];
 
-type Seq = { N: number; imgs: (HTMLImageElement | undefined)[]; ok: boolean };
+type Frame = HTMLImageElement | ImageBitmap;
+type Seq = { N: number; imgs: (Frame | undefined)[]; ok: boolean };
 
 /**
  * The hero plays as steps, not as a scrub: the title, each caption and the closing logo.
@@ -30,8 +31,10 @@ const STEP_VH = 0.6;
 const STRIDE = 2;
 /** The loader only waits for every COARSE-th frame (spread over the whole animation); the rest stream in behind it. */
 const COARSE = 6;
-/** Parallel frame downloads. */
+/** Parallel frame downloads (fallback, one file per frame). */
 const LANES = 6;
+/** Parallel pack downloads once the opening pack is in. */
+const PACK_LANES = 3;
 /** How long a step waits for its in-between frames before playing on the coarse ones. */
 const FINE_WAIT_MS = 700;
 /** Longest a step waits for its frames before playing anyway. */
@@ -81,6 +84,7 @@ export const Hero = () => {
     seq.current = S;
     let alive = true;
     const releaseHeavy = holdHeavyAssets();
+    const releaseProbes = holdImageProbes();
     const load = (i: number) =>
       new Promise<boolean>((res) => {
         if (S.imgs[i]) return res(true);
@@ -93,11 +97,72 @@ export const Hero = () => {
         im.onerror = () => res(false);
         im.src = asset.heroFrame(device, i * STRIDE + 1);
       });
+    /** Fetches one pack; reports byte progress; returns the pack count from its header, or 0 if it isn't a valid pack. */
+    const fetchPack = async (p: number, onBytes?: (f: number) => void) => {
+      try {
+        const res = await fetch(asset.heroPack(device, p));
+        if (!res.ok || !res.body) return 0;
+        const len = Number(res.headers.get('content-length')) || 0;
+        const reader = res.body.getReader();
+        const parts: Uint8Array[] = [];
+        let got = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done || !alive) break;
+          parts.push(value);
+          got += value.length;
+          if (len) onBytes?.(Math.min(1, got / len));
+        }
+        if (!alive) return 0;
+        const buf = new Uint8Array(got);
+        let o = 0;
+        for (const x of parts) {
+          buf.set(x, o);
+          o += x.length;
+        }
+        const dv = new DataView(buf.buffer);
+        if (got < 12 || String.fromCharCode(buf[0], buf[1], buf[2], buf[3]) !== 'TEMH') return 0;
+        const count = dv.getUint32(4, true), n = dv.getUint32(8, true);
+        let at = 12 + n * 8;
+        await Promise.all(
+          Array.from({ length: n }, (_, k) => {
+            const frame = dv.getUint32(12 + k * 8, true), size = dv.getUint32(16 + k * 8, true);
+            const blob = new Blob([buf.subarray(at, at + size)], { type: 'image/webp' });
+            at += size;
+            const i = (frame - 1) / STRIDE;
+            return createImageBitmap(blob).then(
+              (bm) => {
+                if (alive && Number.isInteger(i) && i >= 0 && i < N) S.imgs[i] ??= bm;
+              },
+              () => undefined,
+            );
+          }),
+        );
+        return count;
+      } catch {
+        return 0;
+      }
+    };
+    const loadPacks = async () => {
+      const count = await fetchPack(0, (f) => alive && setProgress(f * 0.95));
+      if (!count || !alive) return false;
+      finish();
+      let next = 1;
+      const lane = async () => {
+        while (alive && next < count) {
+          await fetchPack(next++);
+          if (alive) setTick((t) => t + 1);
+        }
+      };
+      await Promise.all(Array.from({ length: PACK_LANES }, lane));
+      return true;
+    };
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let finished = false;
     const finish = () => {
       if (!alive || finished) return;
       finished = true;
+      releaseProbes();
       setProgress(1);
       setLoaded(true);
       setTick((t) => t + 1);
@@ -118,7 +183,14 @@ export const Hero = () => {
         releaseHeavy();
         return finish();
       }
-      // Coarse frames first (they gate the loader), then the in-between frames in playback order.
+      // Preferred path: a few bundled packs (see scripts/pack-hero.mjs), so slow connections pay the per-request wait a few times instead of once per frame.
+      if (await loadPacks()) {
+        finish();
+        releaseHeavy();
+        return;
+      }
+      if (!alive) return;
+      // Fallback: one request per frame. Coarse frames first (they gate the loader), then the in-between frames in playback order.
       const coarse = Array.from({ length: N }, (_, i) => i).filter((i) => i > 0 && (i % COARSE === 0 || i === N - 1));
       const fine = Array.from({ length: N }, (_, i) => i).filter((i) => i > 0 && i % COARSE !== 0 && i !== N - 1);
       const queue = [...coarse, ...fine];
@@ -142,6 +214,7 @@ export const Hero = () => {
     return () => {
       alive = false;
       releaseHeavy();
+      releaseProbes();
       window.clearTimeout(safety);
     };
   }, []);
@@ -177,7 +250,7 @@ export const Hero = () => {
     if (!a) return;
     const t = hi > lo ? Math.min(1, Math.max(0, (f - lo) / (hi - lo))) : 0;
     const ctx = c.getContext('2d')!;
-    const paint = (img: HTMLImageElement, alpha: number) => {
+    const paint = (img: Frame, alpha: number) => {
       const k = Math.max(w / img.width, h / img.height), dw = img.width * k, dh = img.height * k;
       ctx.globalAlpha = alpha;
       ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);

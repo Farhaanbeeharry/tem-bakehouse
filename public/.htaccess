@@ -9,7 +9,7 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-RewriteCond %{REQUEST_URI} \.(glb|png|webp|jpg|jpeg|svg|js|css|ico|json|txt|pdf)$ [NC]
+RewriteCond %{REQUEST_URI} \.(glb|pack|png|webp|jpg|jpeg|svg|js|css|ico|json|txt|pdf)$ [NC]
 RewriteRule ^ - [R=404,L]
 
 RewriteRule ^ index.html [L]
@@ -17,6 +17,7 @@ RewriteRule ^ index.html [L]
 <IfModule mod_mime.c>
   AddType model/gltf-binary .glb
   AddType image/webp .webp
+  AddType application/octet-stream .pack
 </IfModule>
 
 <IfModule mod_deflate.c>
@@ -30,7 +31,7 @@ RewriteRule ^ index.html [L]
   <FilesMatch "\.(js|css)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-  <FilesMatch "\.(webp|png|jpg|glb)$">
+  <FilesMatch "\.(webp|png|jpg|glb|pack)$">
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
 </IfModule>

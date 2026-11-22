@@ -98,7 +98,7 @@ See **[ASSET-PROMPTS.md](ASSET-PROMPTS.md)** for every file path and its generat
 | Flavour 3D models | `public/models/tem_{flavour}.glb` |
 | Flavour photos | `public/assets/products/{flavour}/tem_{flavour}_{whole,broken,crumb}.png` |
 | Category / moment / gallery images | `public/assets/{categories,moments,gallery}/…` |
-| Hero scroll frames (done) | `public/assets/hero/{desktop,mobile}/` |
+| Hero scroll frames (done) | `public/assets/hero/{desktop,mobile}/`, then run `npm run hero:pack` to rebuild the bundled packs |
 
 ## Structure
 

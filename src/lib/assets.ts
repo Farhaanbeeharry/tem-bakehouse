@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 export const asset = {
   heroFrame: (device: 'desktop' | 'mobile', n: number) =>
     `/assets/hero/${device}/tem_hero_${device}_${String(n).padStart(4, '0')}.webp`,
+  heroPack: (device: 'desktop' | 'mobile', p: number) => `/assets/hero/${device}/packs/pack_${String(p).padStart(2, '0')}.pack`,
   productWhole: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_whole.webp`,
   productBroken: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_broken.webp`,
   productTop: (flavour: string) => `/assets/products/${flavour}/tem_${flavour}_top.webp`,
@@ -23,15 +24,28 @@ export const asset = {
 
 const imageCache = new Map<string, Promise<boolean>>();
 
+/** While the homepage loader is up, image probes wait so they don't compete with the hero frames. */
+let introGate: Promise<void> = Promise.resolve();
+export const holdImageProbes = () => {
+  let release = () => {};
+  introGate = new Promise<void>((r) => {
+    release = r;
+  });
+  return release;
+};
+
 export const probeImage = (src: string) => {
   let p = imageCache.get(src);
   if (!p) {
-    p = new Promise<boolean>((resolve) => {
-      const im = new Image();
-      im.onload = () => resolve(true);
-      im.onerror = () => resolve(false);
-      im.src = src;
-    });
+    p = introGate.then(
+      () =>
+        new Promise<boolean>((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve(true);
+          im.onerror = () => resolve(false);
+          im.src = src;
+        }),
+    );
     imageCache.set(src, p);
   }
   return p;
