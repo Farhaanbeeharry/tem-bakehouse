@@ -120,7 +120,7 @@ export const categories: Category[] = [
   { id: 'cakes', name: 'Cookie Cakes', short: 'Cakes', blurb: 'One giant cookie, personalised for the occasion.' },
   { id: 'sticks', name: 'Cookie Sticks', short: 'Sticks', blurb: 'Long, dippable, easy to hold, easy to share.' },
   { id: 'shots', name: 'Cookie Shots', short: 'Shots', blurb: 'Fill it, sip it, savour it: a cookie shot for moments that linger.' },
-  { id: 'collection', name: 'The Cookie Collection', short: 'Collection', blurb: 'Our mains: one story, told in four sweet expressions.', hidden: true },
+  { id: 'collection', name: 'The Cookie Collection', short: 'Collection', blurb: 'Our mains: one story, told in five sweet expressions.', hidden: true },
 ];
 
 const BASE = 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt';
@@ -151,8 +151,8 @@ export const MODEL_FLAVOURS = flavours.map((f) => f.id);
 const VARIES = 'Ingredients vary depending on the flavour you choose. Refer to the single-flavour round cookies for the full ingredients list.';
 const CLASSIC_FOUR = ['choco-chips', 'plain', 'pistachio', 'double-choco'];
 
-/** The Cookie Collection: First Edition. TEM's four mains. */
-export const COLLECTION_FLAVOURS = ['choco-chips', 'double-choco', 'pistachio', 'red-velvet'];
+/** The Cookie Collection: First Edition. TEM's five mains. */
+export const COLLECTION_FLAVOURS = ['choco-chips', 'double-choco', 'pistachio', 'red-velvet', 'nutty-crunch'];
 
 const ROUND_PACKS: Pack[] = [{ id: 'p1', label: 'Single', qty: 1, mult: 1 }];
 
@@ -179,7 +179,7 @@ export const products: Product[] = [
   { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'The cookie you celebrate with, baked for birthdays, gatherings and every moment in between.', price: 1000, flavourPick: true, flavours: ['choco-chips', 'double-choco', 'red-velvet', 'pistachio', 'nutty-crunch', 'plain'], fixedFilling: 'Chocolate Hazelnut Spread', custom: true, ingredients: VARIES, packNote: 'Other sizes available upon request — get in touch.', packs: [{ id: 's', label: '15 cm', qty: 1, mult: 1 }, { id: 'l', label: '20 cm', qty: 1, mult: 1.3 }] },
   { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Crisp outside, soft within, and reimagined for dipping and easy, one-handed snacking.', price: 325, flavourPick: true, flavours: CLASSIC_FOUR, dips: [{ name: 'Nutella', price: 15 }, { name: 'Bueno Spread', price: 15 }, { name: 'Pistachio Spread', price: 20 }], ingredients: VARIES, packs: [{ id: 'k20', label: 'Box of 20', qty: 20, mult: 1 }, { id: 'k30', label: 'Box of 30', qty: 30, mult: 400 / 325 }] },
   { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 700, flavourPick: true, flavours: ['choco-chips'], ingredients: 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, milk chocolate chips, dark chocolate chips, milk chocolate or dark chocolate-lined.', care: 'Extra care: Refrigerate if not serving immediately. When the moment is right, let it sit at room temperature for 15 minutes, pour your favourite drink and have it your way.', packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 1 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1200 / 700 }] },
-  { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Our four mains: Classic Choco Chip, Double Choco, Pistachio and Red Velvet.', price: 1000, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 9', qty: 9, mult: 1 }] },
+  { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Our five mains: Classic Choco Chip, Double Choco, Pistachio, Red Velvet and Nutty Crunch.', price: 1000, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 9', qty: 9, mult: 1 }] },
 ];
 
 // Back-office edits --------------------------------------------------------------

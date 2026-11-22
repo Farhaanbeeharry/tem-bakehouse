@@ -25,6 +25,7 @@ const EXPRESSIONS = [
   { id: 'double-choco', name: 'Double Choco', text: 'Deep, dark, and unapologetically chocolate. Crackled on top, fudgy within: built for the days that call for something rich.' },
   { id: 'pistachio', name: 'Pistachio', text: 'Nutty, earthy, and dusted in pistachio gold, with a molten Nutella heart waiting at the centre. The one that surprises you halfway through.' },
   { id: 'red-velvet', name: 'Red Velvet', text: 'A bold ruby crumb, kissed with cocoa and studded with white chocolate. Soft, faintly tangy, and rich all the way through: a classic, made unforgettable.' },
+  { id: 'nutty-crunch', name: 'Nutty Crunch', text: 'Almonds, cashews and pistachio, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.' },
 ];
 
 /** The leaflet link only appears once TEM's document is in public/assets/collection/. */
@@ -63,7 +64,7 @@ export const CookieCollectionPage = () => {
               <br />
               <em>Collection.</em>
             </h1>
-            <p style={{ margin: 0, maxWidth: '44ch', fontSize: 18, lineHeight: 1.6, color: '#E5DCC5' }}>Our mains: one story, told in four sweet expressions.</p>
+            <p style={{ margin: 0, maxWidth: '44ch', fontSize: 18, lineHeight: 1.6, color: '#E5DCC5' }}>Our mains: one story, told in five sweet expressions.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <button type="button" className="btn btn-cream" onClick={add} disabled={!available}>
                 {available ? `Add to Order Request · ${fmt(product.price)}` : 'Not available right now'}
@@ -117,8 +118,8 @@ export const CookieCollectionPage = () => {
         </div>
       </section>
 
-      <section aria-label="The four expressions" style={{ padding: '0 var(--gutter) clamp(72px,10vw,120px)' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,240px),1fr))', gap: 18 }}>
+      <section aria-label="The five expressions" style={{ padding: '0 var(--gutter) clamp(72px,10vw,120px)' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,200px),1fr))', gap: 18 }}>
           {EXPRESSIONS.map(({ id, name, text }, i) => {
             return (
               <Link key={id} to={'/cookies/round-' + id} style={{ display: 'flex', flexDirection: 'column', gap: 12, color: '#1E1310', textDecoration: 'none' }}>
@@ -145,10 +146,10 @@ export const CookieCollectionPage = () => {
         <div style={{ maxWidth: 760, margin: 'clamp(64px,8vw,104px) auto 0', display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.24em', color: '#711D2C' }}>A SMALL THANK YOU</span>
           <h2 className="h-page" style={{ fontSize: 'clamp(28px,3.4vw,48px)', lineHeight: 0.95 }}>
-            Four flavours. One story. Made for you.
+            Five flavours. One story. Made for you.
           </h2>
           <p style={{ margin: 0, fontSize: 'clamp(17px,1.5vw,19px)', lineHeight: 1.7, color: '#3B2519' }}>Every cookie in this collection carries the same batch of years, trial, and heart that started TEM Bakehouse back in 2023. Whichever one you reach for, we hope it turns your moment into a memory.</p>
-          <p style={{ margin: 0, fontSize: 'clamp(17px,1.5vw,19px)', lineHeight: 1.7, color: '#3B2519' }}>Classic, Double Choco, Pistachio &amp; Red Velvet are our mains, the heart of what we bake. But they’re not the whole story: more flavours are always waiting to be discovered at TEM Bakehouse.</p>
+          <p style={{ margin: 0, fontSize: 'clamp(17px,1.5vw,19px)', lineHeight: 1.7, color: '#3B2519' }}>Classic, Double Choco, Pistachio, Red Velvet &amp; Nutty Crunch are our mains, the heart of what we bake. But they’re not the whole story: more flavours are always waiting to be discovered at TEM Bakehouse.</p>
           <button type="button" className="btn btn-primary" onClick={add} disabled={!available} style={{ marginTop: 10 }}>
             {available ? `Add the collection · ${fmt(product.price)}` : 'Not available right now'}
           </button>

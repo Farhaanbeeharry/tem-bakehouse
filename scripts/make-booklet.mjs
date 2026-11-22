@@ -25,6 +25,7 @@ const expressions = [
   ['double-choco', 'Double Choco', 'Deep, dark, and unapologetically chocolate. Crackled on top, fudgy within: built for the days that call for something rich.', 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, cocoa powder and dark chocolate.'],
   ['pistachio', 'Pistachio', 'Nutty, earthy, and dusted in pistachio gold, with a molten Nutella heart waiting at the centre. The one that surprises you halfway through.', 'Butter, caster sugar, brown sugar, pistachio cream, pistachio paste, eggs, vanilla extract, salt, green food colouring, flour and pistachio chunks.'],
   ['red-velvet', 'Red Velvet', 'A bold ruby crumb, kissed with cocoa and studded with white chocolate. Soft, faintly tangy, and rich all the way through: a classic, made unforgettable.', 'Butter, caster sugar, brown sugar, cream cheese, eggs, vanilla extract, salt, flour and white chocolate chips.'],
+  ['nutty-crunch', 'Nutty Crunch', 'Almonds, cashews and pistachio, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.', 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, almonds, cashews and pistachio chunks.'],
 ];
 
 const STORY = [
@@ -63,14 +64,14 @@ const cover = `
 <section class="page dark">
   <div class="mono" style="color:#C7B593">First Edition · Since 2023</div>
   <h1 class="display" style="font-size:44pt;margin-top:8mm">The Cookie<br><em>Collection.</em></h1>
-  <p class="serif" style="font-size:15pt;margin-top:5mm;color:#E5DCC5">Our mains: one story, told in four sweet expressions.</p>
+  <p class="serif" style="font-size:15pt;margin-top:5mm;color:#E5DCC5">Our mains: one story, told in five sweet expressions.</p>
   <div style="position:relative;flex:1;margin:4mm -6mm">
     ${expressions.map(([id], i) => {
-      const pos = [[6, 6, 48, -12], [50, 2, 46, 18], [4, 50, 46, 30], [50, 46, 48, -20]][i];
+      const pos = [[4, 2, 44, -12], [52, 0, 42, 18], [28, 30, 46, 6], [0, 58, 42, 30], [54, 54, 42, -24]][i];
       return `<img src="${img(id)}" style="position:absolute;left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;transform:rotate(${pos[3]}deg);filter:drop-shadow(0 6mm 6mm rgba(0,0,0,.45))">`;
     }).join('')}
   </div>
-  <div class="foot">${wordmark}<span class="serif" style="font-size:13pt;color:#E5DCC5">Four expressions, one box.</span></div>
+  <div class="foot">${wordmark}<span class="serif" style="font-size:13pt;color:#E5DCC5">Five expressions, one box.</span></div>
 </section>`;
 
 const story = `
@@ -97,7 +98,7 @@ const ingredients = `
 
 const expressionPages = expressions.map(([id, name, text, ingr], i) => `
 <section class="page ${i % 2 ? 'sand' : 'cream'}">
-  <div style="display:flex;justify-content:space-between"><span class="mono" style="color:#711D2C">Expression ${['one', 'two', 'three', 'four'][i]}</span><span class="mono" style="color:#6E5C4D">0${i + 1} / 04</span></div>
+  <div style="display:flex;justify-content:space-between"><span class="mono" style="color:#711D2C">Expression ${['one', 'two', 'three', 'four', 'five'][i]}</span><span class="mono" style="color:#6E5C4D">0${i + 1} / 05</span></div>
   <h2 class="display" style="font-size:34pt;margin-top:6mm">${name}</h2>
   <div style="flex:1;display:grid;place-items:center;margin:2mm 0">
     <img src="${img(id)}" style="width:92mm;transform:rotate(${i * 23 - 30}deg);filter:drop-shadow(0 5mm 6mm rgba(60,30,15,.28))">
@@ -112,10 +113,10 @@ const expressionPages = expressions.map(([id, name, text, ingr], i) => `
 const thanks = `
 <section class="page cream">
   <div class="mono" style="color:#711D2C">A small thank you</div>
-  <h2 class="display" style="font-size:30pt;margin-top:6mm">Four flavours.<br>One story.<br><em>Made for you.</em></h2>
+  <h2 class="display" style="font-size:30pt;margin-top:6mm">Five flavours.<br>One story.<br><em>Made for you.</em></h2>
   <div style="margin-top:10mm;display:flex;flex-direction:column;gap:4.2mm;font-size:10.5pt;line-height:1.62;color:#3B2519">
     <p>Every cookie in this collection carries the same batch of years, trial, and heart that started TEM Bakehouse back in 2023. Whichever one you reach for, we hope it turns your moment into a memory.</p>
-    <p>Classic, Double Choco, Pistachio &amp; Red Velvet are our mains, the heart of what we bake. But they’re not the whole story: more flavours are always waiting to be discovered at TEM Bakehouse.</p>
+    <p>Classic, Double Choco, Pistachio, Red Velvet &amp; Nutty Crunch are our mains, the heart of what we bake. But they’re not the whole story: more flavours are always waiting to be discovered at TEM Bakehouse.</p>
   </div>
   <div class="foot">${wordmark}<span class="mono" style="color:#711D2C">Made for the moment</span></div>
 </section>`;
