@@ -107,6 +107,11 @@ export const OrdersView = () => {
                 </td>
                 <td className="adm-muted" style={{ maxWidth: 260 }}>
                   {summaryOf(o)}
+                  {o.notes && (
+                    <span title={o.notes} style={{ display: 'block', marginTop: 4, fontSize: 12, color: '#7A4E0E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <strong>Note:</strong> {o.notes}
+                    </span>
+                  )}
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>{totalText(o)}</td>
                 <td>

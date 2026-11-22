@@ -241,6 +241,12 @@ export const OrderDetail = ({ o }: { o: Order }) => {
                 <span style={{ fontSize: 14 }}>{fmt(l.unit * l.qty)}</span>
               </div>
             ))}
+            {o.notes && (
+              <div style={{ padding: '12px 14px', borderRadius: 14, background: '#F6E6C8', color: '#4A300A', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                <strong style={{ display: 'block', marginBottom: 2 }}>Your note</strong>
+                {o.notes}
+              </div>
+            )}
             {DONE_STATUSES.includes(o.status) && (
               <button type="button" className="btn btn-outline" onClick={reorder}>
                 Reorder these items

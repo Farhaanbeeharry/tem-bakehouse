@@ -92,6 +92,13 @@ export const OrderDrawer = ({ order: o, onClose }: Props) => {
             </div>
           </div>
 
+          {o.notes && (
+            <div className="adm-note" role="note" style={{ background: '#F6E6C8', whiteSpace: 'pre-line' }}>
+              <strong style={{ display: 'block', marginBottom: 4 }}>Note from the customer</strong>
+              {o.notes}
+            </div>
+          )}
+
           <section className="adm-sec" style={{ gap: 8 }}>
             <h3>Items</h3>
             {o.items.map((l) => {
@@ -121,11 +128,6 @@ export const OrderDrawer = ({ order: o, onClose }: Props) => {
               <span>Estimate from menu prices</span>
               <strong style={{ color: 'var(--a-ink)' }}>{fmt(estimate(o))}</strong>
             </div>
-            {o.notes && (
-              <div className="adm-note" style={{ background: '#F6E6C8' }}>
-                <strong>Customer note:</strong> {o.notes}
-              </div>
-            )}
           </section>
 
           <OrderActions order={o} settings={settings} />

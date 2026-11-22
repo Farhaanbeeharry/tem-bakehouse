@@ -291,16 +291,30 @@ export const CheckoutPage = () => {
                 />
               </label>
             )}
+          </section>
+
+          <section aria-label="Order note" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <SectionTitle n="03">Order note</SectionTitle>
             <label className="field">
               <span>
-                Notes for TEM <span className="hint">Optional</span>
+                Add a note to your order <span className="hint">Optional</span>
               </span>
-              <textarea className="input" rows={3} value={ck.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Anything TEM should know about your request" />
+              <textarea
+                className="input"
+                rows={4}
+                maxLength={1000}
+                value={ck.notes}
+                onChange={(e) => set({ notes: e.target.value })}
+                placeholder="Allergies, a gift message, a preferred collection time, or anything else TEM should know"
+              />
+              <span className="hint" style={{ alignSelf: 'flex-end' }}>
+                {ck.notes.length}/1000
+              </span>
             </label>
           </section>
 
           <section aria-label="Policies" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <SectionTitle n="03">Policies</SectionTitle>
+            <SectionTitle n="04">Policies</SectionTitle>
             <label className="check">
               <input type="checkbox" checked={ck.a1} onChange={() => set({ a1: !ck.a1 })} />
               <span>
