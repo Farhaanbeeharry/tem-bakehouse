@@ -455,3 +455,6 @@ verify_jwt = false
 
 [functions.contact-message]
 verify_jwt = false
+
+[functions.keep-alive]
+verify_jwt = false
