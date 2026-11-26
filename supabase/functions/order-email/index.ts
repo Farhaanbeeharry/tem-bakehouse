@@ -121,7 +121,8 @@ Deno.serve(async (req) => {
       subject: `We received your request · ${ref}`,
       html,
       text,
-      idempotencyKey: `order-confirmation/${ref}`,
+      // The ref alone is not unique over time: a deleted order frees its number for the next one.
+      idempotencyKey: `order-confirmation/${ref}/${new Date(o.created_at).getTime()}`,
     });
     console.log(`[order-email] ${ref}: sent to ${maskEmail(to)}${id ? ` (${id})` : ''}`);
   } catch (e) {
