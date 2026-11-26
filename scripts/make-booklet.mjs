@@ -25,7 +25,7 @@ const expressions = [
   ['double-choco', 'Double Choco', 'Deep, dark, and unapologetically chocolate. Crackled on top, fudgy within: built for the days that call for something rich.', 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, cocoa powder and dark chocolate.'],
   ['pistachio', 'Pistachio', 'Nutty, earthy, and dusted in pistachio gold, with a molten Nutella heart waiting at the centre. The one that surprises you halfway through.', 'Butter, caster sugar, brown sugar, pistachio cream, pistachio paste, eggs, vanilla extract, salt, green food colouring, flour and pistachio chunks.'],
   ['red-velvet', 'Red Velvet', 'A bold ruby crumb, kissed with cocoa and studded with white chocolate. Soft, faintly tangy, and rich all the way through: a classic, made unforgettable.', 'Butter, caster sugar, brown sugar, cream cheese, eggs, vanilla extract, salt, flour and white chocolate chips.'],
-  ['nutty-crunch', 'Nutty Crunch', 'Almonds, cashews and pistachio, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.', 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, almonds, cashews and pistachio chunks.'],
+  ['nutty-crunch', 'Nutty Crunch', 'Crunchy pistachio chunks, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.', 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour and pistachio chunks.'],
 ];
 
 const STORY = [

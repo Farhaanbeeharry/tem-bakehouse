@@ -51,6 +51,7 @@ export const Footer = ({ extraBottom }: { extraBottom: boolean }) => {
           borderTop: '1px solid #3B2519',
           display: 'flex',
           justifyContent: 'space-between',
+          alignItems: 'center',
           gap: 12,
           flexWrap: 'wrap',
           fontFamily: 'var(--font-mono)',
@@ -59,6 +60,16 @@ export const Footer = ({ extraBottom }: { extraBottom: boolean }) => {
         }}
       >
         <span>© {new Date().getFullYear()} TEM Bakehouse</span>
+        <a
+          className="dev-credit"
+          href="https://stylotech.mu"
+          target="_blank"
+          rel="noopener"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-sans)', fontSize: 12, letterSpacing: '.02em', color: 'inherit', textDecoration: 'none' }}
+        >
+          <span>Designed and developed by</span>
+          <img src="/stylotech-logo.webp" alt="StyloTech" width="67" height="18" loading="lazy" style={{ display: 'block', height: 18, width: 'auto' }} />
+        </a>
       </div>
     </footer>
   );

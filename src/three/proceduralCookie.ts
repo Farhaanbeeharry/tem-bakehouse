@@ -144,7 +144,7 @@ export const LOOKS: Record<string, FlavourLook> = {
   ferrero: { dough: [166, 112, 68], chip: '#3c2112', kind: 'nut', n: 22, molten: true },
   plain: { dough: [216, 172, 114], chip: null, kind: 'none', n: 0 },
   pinky: { dough: [201, 154, 98], chip: '#8c623d', kind: 'nut', n: 46, chipRough: 0.8 },
-  'nutty-crunch': { dough: [186, 132, 80], chip: '#8a5b33', kind: 'nut', n: 40, chipRough: 0.75 },
+  'nutty-crunch': { dough: [186, 132, 80], chip: '#7d984c', kind: 'nut', n: 24, chipRough: 0.75 },
   biscoff: { dough: [180, 116, 64], chip: '#7c4520', kind: 'bits', n: 50 },
   'salted-caramel': { dough: [198, 140, 78], chip: '#c9852f', kind: 'chunk', n: 16, molten: true, chipRough: 0.2 },
 };

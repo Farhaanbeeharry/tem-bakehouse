@@ -9,6 +9,7 @@ import { asset, useImageExists } from '../lib/assets';
 import { fmt } from '../lib/format';
 import { useShop } from '../lib/shop';
 import { cookiePriceFrom, useProducts } from '../lib/store';
+import { EnquiryProductPage } from './EnquiryProductPage';
 import { NotFoundPage } from './NotFoundPage';
 
 type View = 'shape' | 'whole' | 'broken' | 'crumb';
@@ -30,6 +31,7 @@ export const ProductPage = () => {
   const P = useProducts();
   const p = P.find((x) => x.id === id);
   if (!p) return <NotFoundPage />;
+  if (p.enquiry) return <EnquiryProductPage key={p.id} p={p} />;
   return <ProductDetail key={p.id} id={p.id} />;
 };
 

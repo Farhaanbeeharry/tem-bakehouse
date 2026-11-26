@@ -119,7 +119,7 @@ export const defaultSettings = (): Settings => ({
   delivery: false,
   slots: ['10:00–12:00', '12:00–14:00', '14:00–16:00', '16:00–18:00'],
   holidays: [isoDay(9), isoDay(10)],
-  payment: 'Bank transfer — account details to be supplied by TEM Bakehouse. Use your order reference as the payment reference.',
+  payment: 'Bank transfer\nBank: MCB\nAccount no.: 000456930523\nAccount name: Fatemah Ramankhan\nUse your order reference as the payment reference.',
 });
 
 const line = (pid: string, packId: string, qty: number, extra?: Partial<OrderLine>): OrderLine => {

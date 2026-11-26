@@ -127,7 +127,7 @@ Macro close-up of the broken face of the same [FLAVOUR NAME] cookie: [INSIDE DES
 | **Ferrero** ★ | thick cocoa-hazelnut dough with whole roasted hazelnuts, dark chocolate chunks and crushed wafer, no wrappers or branding | rich cocoa crumb with chopped hazelnuts and melted chocolate-hazelnut centre |
 | Plain | thick buttery golden dough with a crackled sugary top, no inclusions | tender buttery golden crumb |
 | Pinky Cookie | thick soft blush-pink dough with a crackled top and pale white chocolate chips | soft pink crumb with white chocolate chips |
-| Nutty Crunch | thick golden-brown dough packed with crunchy mixed nut pieces on and in the surface | golden crumb full of crunchy roasted nut pieces |
+| Nutty Crunch | thick golden-brown dough studded with crunchy green pistachio chunks on and in the surface; pistachio only, no almonds, no cashews, no other nuts | golden crumb full of crunchy pistachio chunks, no almonds or cashews |
 | Biscoff *(provisional)* | thick caramelised spiced-biscuit dough with crushed speculoos biscuit pieces and a cookie-butter drizzle, no branding | soft spiced crumb with a cookie-butter centre |
 | Salted Caramel *(provisional)* | thick golden dough with amber caramel chunks and a few flakes of sea salt on top | soft golden crumb with oozing amber caramel |
 

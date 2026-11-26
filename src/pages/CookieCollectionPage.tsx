@@ -26,7 +26,7 @@ const EXPRESSIONS = [
   { id: 'double-choco', name: 'Double Choco', text: 'Deep, dark, and unapologetically chocolate. Crackled on top, fudgy within: built for the days that call for something rich.' },
   { id: 'pistachio', name: 'Pistachio', text: 'Nutty, earthy, and dusted in pistachio gold, with a molten Nutella heart waiting at the centre. The one that surprises you halfway through.' },
   { id: 'red-velvet', name: 'Red Velvet', text: 'A bold ruby crumb, kissed with cocoa and studded with white chocolate. Soft, faintly tangy, and rich all the way through: a classic, made unforgettable.' },
-  { id: 'nutty-crunch', name: 'Nutty Crunch', text: 'Almonds, cashews and pistachio, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.' },
+  { id: 'nutty-crunch', name: 'Nutty Crunch', text: 'Crunchy pistachio chunks, folded into a golden, buttery dough. Rustic and toasty, every bite snaps with a little wild crunch.' },
 ];
 
 /** The leaflet link only appears once TEM's document is in public/assets/collection/. */

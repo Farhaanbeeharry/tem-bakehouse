@@ -90,6 +90,11 @@ export type Product = {
   photo?: string;
   /** Created in the back office (can be deleted there). */
   added?: boolean;
+  /**
+   * Ordered by message, not through the order request: the page shows these paragraphs and a message form,
+   * with no price or options. TEM replies with the details and price.
+   */
+  enquiry?: string[];
 };
 
 export const FILLINGS: Extra[] = [
@@ -132,7 +137,7 @@ export const flavours: Flavour[] = [
   { id: 'pinky', name: 'Pinky', status: 'available', diet: 'both', dough: '#C99A62', chip: '#8C623D', price: 100, note: 'Like our Nutty Crunch, with less sugar and an extra crunch.', ingredients: `${BASE}, nuts and flour.`, fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'choco-chips', name: 'Choco Chip', status: 'available', diet: 'both', dough: '#C68B52', chip: '#3A2116', price: 130, note: 'Timeless comfort — the one you already know, and love anyway.', ingredients: `${BASE}, flour, milk chocolate chips and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'double-choco', name: 'Double Choco', status: 'available', diet: 'regular', dough: '#5B3524', chip: '#1F100A', price: 135, note: 'Chocolate doubled down, no apologies.', ingredients: `${BASE}, flour, cocoa powder and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
-  { id: 'nutty-crunch', name: 'Nutty Crunch', status: 'available', diet: 'both', dough: '#B8834F', chip: '#7A5131', price: 140, note: 'Every bite snaps with a little wild crunch.', ingredients: `${BASE}, flour, almonds, cashews and pistachio chunks.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'nutty-crunch', name: 'Nutty Crunch', status: 'available', diet: 'both', dough: '#B8834F', chip: '#7D984C', price: 140, note: 'Every bite snaps with a little wild crunch.', ingredients: `${BASE}, flour and pistachio chunks.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'red-velvet', name: 'Red Velvet', status: 'available', diet: 'regular', dough: '#8A2A2D', chip: '#F1E8D8', price: 155, note: 'Soft blush of sweetness wrapped in velvet.', ingredients: 'Butter, caster sugar, brown sugar, cream cheese, eggs, vanilla extract, salt, flour and white chocolate chips.', fillings: ['Cream Cheese'] },
   { id: 'pistachio', name: 'Pistachio', status: 'available', diet: 'both', dough: '#C7AE78', chip: '#7D984C', price: 160, note: 'Green, nutty & quietly luxurious.', ingredients: 'Butter, caster sugar, brown sugar, pistachio cream, pistachio paste, eggs, vanilla extract, salt, green food colouring, flour and pistachio chunks.', fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'ferrero', name: 'Praline Dream', status: 'available', diet: 'regular', dough: '#A77346', chip: '#4A2A17', price: 170, note: 'The flavour you know, in a cookie you won’t forget.', ingredients: 'Butter, caster sugar, brown sugar, rocher cream, Ferrero Rocher chocolate, eggs, vanilla extract, salt and flour.', fillings: ['Nutella', 'Bueno Spread'] },
@@ -147,6 +152,24 @@ export const FEATURED_FLAVOURS = flavours.map((f) => f.id);
 
 /** Flavours with a real 3D model in /public/models. */
 export const MODEL_FLAVOURS = flavours.map((f) => f.id);
+
+// TEM's own words (client feedback V5). The last paragraph leads into the message form.
+const COOKIE_SHOTS_STORY = [
+  'Born from a little imagination, Cookie Shots turn a simple cookie into something extraordinary. A thick, soft-baked cookie, filled with smooth chocolate and finished with a pour of chilled milk or your favourite drink. Sip, savour, and enjoy the sweetest surprise of all — the cup itself!',
+  'More than just a dessert, Cookie Shots are made to bring people together. Perfect for birthdays, weddings, baby showers and special gatherings.',
+  'They’re the kind of little indulgence that makes guests pause, smile and reach for their cameras before taking that first bite. They’re a delightful centrepiece, a conversation starter and a little moment of magic your guests won’t forget.',
+  'The best celebrations aren’t always about the grandest things. Sometimes, it’s the little details that make them unforgettable.',
+];
+
+/** Closing words for Cookie Shots, shown above the message form. */
+export const COOKIE_SHOTS_CALL = {
+  title: 'Let’s Make Your Celebration a Little Sweeter.',
+  lines: [
+    'Ready to make your celebration a little more extraordinary?',
+    'Let our Cookie Shots add a touch of sweetness, a dash of wonder and a moment worth remembering.',
+    'Tell us what you’re celebrating, and we’ll bring the sweetness, one little shot at a time.',
+  ],
+};
 
 const VARIES = 'Ingredients vary depending on the flavour you choose. Refer to the single-flavour round cookies for the full ingredients list.';
 const CLASSIC_FOUR = ['choco-chips', 'plain', 'pistachio', 'double-choco'];
@@ -178,8 +201,8 @@ export const products: Product[] = [
   { id: 'cookie-cup', cat: 'cups', flavour: 'double-choco', name: 'Cookie Cup', status: 'available', diet: 'regular', desc: 'Cookie bites or sticks, easy to hold in one hand and made to stand out: one dip, one memorable moment.', price: 300, flavourPick: true, flavours: CLASSIC_FOUR, styles: ['Cookie Bites', 'Cookie Sticks'], dipChoice: ['Nutella', 'Biscoff Spread', 'Bueno Spread'], ingredients: VARIES, packs: [{ id: 'c1', label: 'One size', qty: 1, mult: 1 }] },
   { id: 'cookie-cake', cat: 'cakes', flavour: 'choco-chips', name: 'Cookie Cake', status: 'available', diet: 'both', desc: 'The cookie you celebrate with, baked for birthdays, gatherings and every moment in between.', price: 1000, flavourPick: true, flavours: ['choco-chips', 'double-choco', 'red-velvet', 'pistachio', 'nutty-crunch', 'plain'], fixedFilling: 'Chocolate Hazelnut Spread', custom: true, ingredients: VARIES, packNote: 'Other sizes available upon request — get in touch.', packs: [{ id: 's', label: '15 cm', qty: 1, mult: 1 }, { id: 'l', label: '20 cm', qty: 1, mult: 1.3 }] },
   { id: 'cookie-sticks', cat: 'sticks', flavour: 'plain', name: 'Cookie Sticks', status: 'available', diet: 'both', desc: 'Crisp outside, soft within, and reimagined for dipping and easy, one-handed snacking.', price: 325, flavourPick: true, flavours: CLASSIC_FOUR, dips: [{ name: 'Nutella', price: 15 }, { name: 'Bueno Spread', price: 15 }, { name: 'Pistachio Spread', price: 20 }], ingredients: VARIES, packs: [{ id: 'k20', label: 'Box of 20', qty: 20, mult: 1 }, { id: 'k30', label: 'Box of 30', qty: 30, mult: 400 / 325 }] },
-  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Our speciality: Cookie shaped into a small glass, ready to be filled. Sip, bite, repeat.', price: 700, flavourPick: true, flavours: ['choco-chips'], ingredients: 'Butter, caster sugar, brown sugar, eggs, vanilla extract, salt, flour, milk chocolate chips, dark chocolate chips, milk chocolate or dark chocolate-lined.', care: 'Extra care: Refrigerate if not serving immediately. When the moment is right, let it sit at room temperature for 15 minutes, pour your favourite drink and have it your way.', packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 1 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1200 / 700 }] },
-  { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Our five mains: Classic Choco Chip, Double Choco, Pistachio, Red Velvet and Nutty Crunch.', price: 1000, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 9', qty: 9, mult: 1 }] },
+  { id: 'cookie-shots', cat: 'shots', flavour: 'choco-chips', name: 'Cookie Shots', status: 'available', diet: 'regular', desc: 'Born from a little imagination, Cookie Shots turn a simple cookie into something extraordinary.', price: 700, enquiry: COOKIE_SHOTS_STORY, packs: [{ id: 'h2', label: 'Set of 2', qty: 2, mult: 1 }, { id: 'h4', label: 'Set of 4', qty: 4, mult: 1200 / 700 }] },
+  { id: 'cookie-collection', cat: 'collection', flavour: 'choco-chips', name: 'The Cookie Collection: First Edition', status: 'available', diet: 'regular', hidden: true, desc: 'Our five mains: Classic Choco Chip, Double Choco, Pistachio, Red Velvet and Nutty Crunch.', price: 1200, contents: COLLECTION_FLAVOURS, ingredients: VARIES, packs: [{ id: 'e1', label: 'Box of 9', qty: 9, mult: 1 }] },
 ];
 
 // Back-office edits --------------------------------------------------------------

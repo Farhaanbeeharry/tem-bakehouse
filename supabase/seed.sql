@@ -35,7 +35,7 @@ insert into public.settings (id, data) values (1, '{
   "delivery": false,
   "slots": ["10:00–12:00", "12:00–14:00", "14:00–16:00", "16:00–18:00"],
   "holidays": [],
-  "payment": "Bank transfer — account details to be supplied by TEM Bakehouse. Use your order reference as the payment reference."
+  "payment": "Bank transfer\nBank: MCB\nAccount no.: 000456930523\nAccount name: Fatemah Ramankhan\nUse your order reference as the payment reference."
 }');
 
 insert into public.orders (ref, customer_id, created, date, slot, location, status, items, notes, estimate, total, deposit_paid, balance_paid, log, contact_name, phone, email)

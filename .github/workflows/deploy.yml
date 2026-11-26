@@ -1,8 +1,8 @@
 name: Deploy to cPanel
 
+# Manual only (Actions → Deploy to cPanel → Run workflow). The site is uploaded to tembakehouse.com by hand
+# until its cPanel SSH login is in the CPANEL_* secrets and the CPANEL_PATH variable is set.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -43,8 +43,10 @@ jobs:
           HOST: ${{ secrets.CPANEL_HOST }}
           PORT: ${{ secrets.CPANEL_PORT }}
           USER: ${{ secrets.CPANEL_USERNAME }}
+          DEST: ${{ vars.CPANEL_PATH }}
         run: |
+          test -n "$DEST" || { echo "Set the CPANEL_PATH repository variable to the site folder on the server."; exit 1; }
           rsync -rlz --delete \
             --exclude '.well-known/' --exclude 'cgi-bin/' \
             -e "ssh -i ~/.ssh/deploy_key -p $PORT" \
-            dist/ "$USER@$HOST:/home/farhtmed/tem.farhaan.info/"
+            dist/ "$USER@$HOST:$DEST"

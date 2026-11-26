@@ -67,7 +67,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
           </button>
           <span style={{ fontSize: 12, fontWeight: 600, color: p.diet === 'regular' ? '#6E5C4D' : '#3D5226' }}>{dietLabel(p.diet)}</span>
         </div>
-        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', marginTop: 16 }}>{soon ? 'Price soon' : (p.packs.length > 1 || p.boxFee != null ? 'from ' : '') + fmt(fromPrice)}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', marginTop: 16 }}>{soon ? 'Price soon' : p.enquiry ? 'Price on request' : (p.packs.length > 1 || p.boxFee != null ? 'from ' : '') + fmt(fromPrice)}</span>
       </div>
       {soon ? (
         <div style={{ border: '1px dashed #C7B593', color: '#6E5C4D', borderRadius: 999, padding: '11px 16px', fontSize: 14, textAlign: 'center', minHeight: 44 }}>Not yet available to order</div>
@@ -77,12 +77,12 @@ export const ProductCard = ({ p }: { p: Product }) => {
           className="btn btn-outline"
           style={{ fontSize: 14, padding: '11px 12px', minHeight: 44, whiteSpace: 'normal', marginTop: 'auto' }}
           onClick={() => {
-            if (needsOptions) return open();
+            if (needsOptions || p.enquiry) return open();
             addLine(p, { pack: p.packs[0].id });
             showToast(p.name + ' added to your order request');
           }}
         >
-          {p.boxOf ? 'Build your box' : needsOptions ? 'Choose options' : 'Quick add · single'}
+          {p.enquiry ? 'Order your Moment' : p.boxOf ? 'Build your box' : needsOptions ? 'Choose options' : 'Quick add · single'}
         </button>
       )}
     </article>

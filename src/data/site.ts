@@ -1,7 +1,7 @@
 // Client-supplied details. The owner can override each one in the back office (Settings → Store contact).
 // Empty values are hidden on the site.
 export const site = {
-  whatsappNumber: '', // e.g. '2305xxxxxxx' (digits only, country code first)
+  whatsappNumber: '+230 5812 6732', // country code first; spaces and + are fine
   instagramHandle: 'tembakehouse',
   facebookUrl: 'https://www.facebook.com/profile.php?id=61592704136301',
   tiktokHandle: '',
@@ -10,7 +10,7 @@ export const site = {
   email: 'contact@tembakehouse.com',
 };
 
-export const whatsappUrl = () => (site.whatsappNumber ? `https://wa.me/${site.whatsappNumber}` : 'https://wa.me/');
+export const whatsappUrl = () => (site.whatsappNumber ? `https://wa.me/${site.whatsappNumber.replace(/\D/g, '')}` : 'https://wa.me/');
 export const instagramUrl = () => (site.instagramHandle ? `https://instagram.com/${site.instagramHandle}` : 'https://instagram.com/');
 export const tiktokUrl = () => (site.tiktokHandle ? `https://www.tiktok.com/@${site.tiktokHandle}` : 'https://www.tiktok.com/');
 export const tiktokLabel = () => (site.tiktokHandle ? '@' + site.tiktokHandle : 'handle to be supplied');

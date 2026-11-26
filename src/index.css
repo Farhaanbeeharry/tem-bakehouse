@@ -45,6 +45,17 @@ a:hover {
   color: var(--wine);
 }
 
+.dev-credit {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.dev-credit:hover,
+.dev-credit:focus-visible {
+  color: #f0eed9 !important;
+  opacity: 1;
+}
+
 button,
 input,
 textarea,

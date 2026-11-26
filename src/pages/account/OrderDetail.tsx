@@ -174,9 +174,7 @@ export const OrderDetail = ({ o }: { o: Order }) => {
               </div>
               <div style={{ padding: 14, borderRadius: 14, background: 'rgba(245,238,227,0.08)', fontSize: 14, lineHeight: 1.55, color: '#E5DCC5' }}>
                 <strong style={{ color: '#F0EED9' }}>Payment instructions</strong>
-                <br />
-                {settings.payment}
-                <br />
+                <span style={{ display: 'block', whiteSpace: 'pre-line' }}>{settings.payment}</span>
                 Reference: <strong style={{ color: '#F0EED9' }}>{o.ref}</strong>
               </div>
               <label className="field">
