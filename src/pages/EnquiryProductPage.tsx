@@ -88,8 +88,8 @@ export const EnquiryProductPage = ({ p }: { p: Product }) => {
             <h1 className="h-page" style={{ fontSize: 'clamp(33px,3.8vw,61px)', lineHeight: 0.9 }}>
               {p.name}
             </h1>
-            {p.enquiry?.map((text, i) => (
-              <p key={text} style={{ margin: 0, maxWidth: '54ch', fontSize: i === 0 ? 19 : 17, lineHeight: 1.65, color: i === 0 ? '#3B2519' : '#6E5C4D' }}>
+            {p.enquiry?.map((text) => (
+              <p key={text} style={{ margin: 0, maxWidth: '54ch', fontSize: 19, lineHeight: 1.65, color: '#3B2519' }}>
                 {text}
               </p>
             ))}
