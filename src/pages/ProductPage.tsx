@@ -48,7 +48,11 @@ const ProductDetail = ({ id }: { id: string }) => {
   const brokenOk = useImageExists(brokenSrc);
   const crumbOk = useImageExists(asset.productCrumb(f.id));
   // A shaped product with its own photo shows just that photo, no cookie thumbnails underneath.
-  const views: View[] = photo ? ['shape'] : ['whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
+  const views: View[] = photo
+    ? ['shape']
+    : p.cat === 'round' && f.brokenOnly && brokenOk
+      ? ['broken']
+      : ['whole', ...(brokenOk ? (['broken'] as const) : []), ...(crumbOk ? (['crumb'] as const) : [])];
   const view: View = picked && views.includes(picked) ? picked : views[0];
   const soon = p.status !== 'available';
   const fav = favs.includes(p.id);

@@ -53,7 +53,7 @@ export const CheckoutPage = () => {
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState('');
   const [calM, setCalM] = useState(0);
-  const [ck, setCk] = useState({ location: '', date: '', slot: '', name: user?.name ?? '', phone: user?.phone ?? '', email: user?.email ?? '', notes: '', a1: false, a2: false, tried: false });
+  const [ck, setCk] = useState({ location: '', date: '', slot: '', name: user?.name ?? '', phone: user?.phone ?? '', email: user?.email ?? '', notes: '', a1: false, tried: false });
   const cal = useMemo(() => buildMonth(calM, settings, counts), [calM, settings, counts]);
   const set = (o: Partial<typeof ck>) => setCk((x) => ({ ...x, ...o }));
   // The session can finish restoring after the first render: prefill from it once it arrives.
@@ -113,7 +113,6 @@ export const CheckoutPage = () => {
       contactName: ck.name,
       phone: ck.phone,
       email: user?.email ?? ck.email,
-      mediaConsent: ck.a2,
     }, user?.id ?? (supabase ? '' : DEMO_CUSTOMER_ID));
     setSending(false);
     if (!ref) return setSendErr(error ?? 'Something went wrong. Please try again.');
@@ -323,16 +322,6 @@ export const CheckoutPage = () => {
                   Order Policy
                 </Link>
                 . <span style={{ color: '#711D2C' }}>(required)</span>
-              </span>
-            </label>
-            <label className="check">
-              <input type="checkbox" checked={ck.a2} onChange={() => set({ a2: !ck.a2 })} />
-              <span>
-                I have read and accept the{' '}
-                <Link to="/policies/media" target="_blank">
-                  Photo &amp; Media Policy
-                </Link>
-                .
               </span>
             </label>
             {ck.tried && errs.length > 0 && (

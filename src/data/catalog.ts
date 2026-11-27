@@ -33,6 +33,8 @@ export type Flavour = {
   /** Uploaded in the back office; replace the bundled cookie photos. */
   photo?: string;
   photoBroken?: string;
+  /** The round-cookie page shows only the broken-in-half photo. */
+  brokenOnly?: boolean;
 };
 
 /** A priced add-on: round-cookie fillings, cookie-stick dips. */
@@ -135,7 +137,7 @@ const ALL_FILLINGS = ['Nutella', 'Pistachio Spread', 'Cream Cheese', 'Biscoff Sp
 export const flavours: Flavour[] = [
   { id: 'plain', name: 'The Original', status: 'available', diet: 'both', dough: '#D8AD73', chip: null, price: 95, note: 'Where it all began, with a gentle biscuit bite and a tender centre.', ingredients: `${BASE} and flour.`, fillings: ALL_FILLINGS },
   { id: 'pinky', name: 'Pinky', status: 'available', diet: 'both', dough: '#C99A62', chip: '#8C623D', price: 100, note: 'Like our Nutty Crunch, with less sugar and an extra crunch.', ingredients: `${BASE}, nuts and flour.`, fillings: ['Nutella', 'Pistachio Spread', 'Biscoff Spread', 'Bueno Spread'] },
-  { id: 'choco-chips', name: 'Choco Chip', status: 'available', diet: 'both', dough: '#C68B52', chip: '#3A2116', price: 130, note: 'Timeless comfort — the one you already know, and love anyway.', ingredients: `${BASE}, flour, milk chocolate chips and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
+  { id: 'choco-chips', name: 'Choco Chip', status: 'available', diet: 'both', dough: '#C68B52', chip: '#3A2116', price: 130, note: 'Timeless comfort — the one you already know, and love anyway.', ingredients: `${BASE}, flour, milk chocolate chips and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'], brokenOnly: true },
   { id: 'double-choco', name: 'Double Choco', status: 'available', diet: 'regular', dough: '#5B3524', chip: '#1F100A', price: 135, note: 'Chocolate doubled down, no apologies.', ingredients: `${BASE}, flour, cocoa powder and dark chocolate.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'nutty-crunch', name: 'Nutty Crunch', status: 'available', diet: 'both', dough: '#B8834F', chip: '#7D984C', price: 140, note: 'Every bite snaps with a little wild crunch.', ingredients: `${BASE}, flour and pistachio chunks.`, fillings: ['Nutella', 'Biscoff Spread', 'Bueno Spread'] },
   { id: 'red-velvet', name: 'Red Velvet', status: 'available', diet: 'regular', dough: '#8A2A2D', chip: '#F1E8D8', price: 155, note: 'Soft blush of sweetness wrapped in velvet.', ingredients: 'Butter, caster sugar, brown sugar, cream cheese, eggs, vanilla extract, salt, flour and white chocolate chips.', fillings: ['Cream Cheese'] },
